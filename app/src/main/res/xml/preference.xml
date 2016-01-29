@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/settings_general">
+        <CheckBoxPreference
+            android:key="autoSetWallpaer"
+            android:title="@string/setting_auto_set_wallpaper"
+            android:summaryOn="@string/setting_auto_set_wallpaper_on"
+            android:summaryOff="@string/setting_auto_set_wallpaper_off"
+            android:defaultValue="true"/>
+        <CheckBoxPreference
+            android:key="autoSave"
+            android:title="@string/setting_auto_save"
+            android:summaryOn="@string/setting_auto_save_on"
+            android:summaryOff="@string/setting_auto_save_off"
+            android:defaultValue="true"/>
+        <EditTextPreference
+            android:key="saveFolder"
+            android:title="@string/setting_save_folder"
+            android:summary="@string/setting_save_folder_summary"
+            android:dialogTitle="@string/setting_save_folder"/>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/setting_about">
+        <Preference
+            android:key="aboutApp"
+            android:title="@string/setting_about_app"/>
+        <Preference
+            android:key="aboutNotice"
+            android:title="@string/setting_about_notice"/>
+    </PreferenceCategory>
+</PreferenceScreen>
