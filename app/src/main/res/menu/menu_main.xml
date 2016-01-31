@@ -6,12 +6,7 @@
         android:id="@+id/action_set_wallpaper"
         android:icon="@android:drawable/ic_menu_gallery"
         android:title="@string/set_wallpaper"
-        app:showAsAction="ifRoom|withText"/>
-    <item
-        android:id="@+id/action_save"
-        android:icon="@android:drawable/ic_menu_save"
-        android:title="@string/save"
-        app:showAsAction="never"/>
+        app:showAsAction="always|withText" />
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"

@@ -7,17 +7,6 @@
             android:summaryOn="@string/setting_auto_set_wallpaper_on"
             android:summaryOff="@string/setting_auto_set_wallpaper_off"
             android:defaultValue="true"/>
-        <CheckBoxPreference
-            android:key="autoSave"
-            android:title="@string/setting_auto_save"
-            android:summaryOn="@string/setting_auto_save_on"
-            android:summaryOff="@string/setting_auto_save_off"
-            android:defaultValue="true"/>
-        <EditTextPreference
-            android:key="saveFolder"
-            android:title="@string/setting_save_folder"
-            android:summary="@string/setting_save_folder_summary"
-            android:dialogTitle="@string/setting_save_folder"/>
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/setting_about">
         <Preference

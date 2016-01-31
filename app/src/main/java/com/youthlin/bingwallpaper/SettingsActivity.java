@@ -18,6 +18,7 @@ import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceScreen;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.Toast;
 
 //原文使用ActionBarActivity提示已过时
 public class SettingsActivity extends AppCompatActivity {
@@ -54,12 +55,20 @@ public class SettingsActivity extends AppCompatActivity {
         @Override
         public boolean onPreferenceTreeClick(PreferenceScreen ps, Preference p) {
             System.out.println("Click" + p.getKey());
-            //TODO 关于与声明
-            if (p.getKey().equals("aboutApp")) {
+            if (p.getKey().equals("autoSetWallpaer")) {
+                Toast.makeText(getActivity(), R.string.auto_set_not_available, Toast.LENGTH_SHORT).show();
+            } else if (p.getKey().equals("aboutApp")) {
                 new AlertDialog.Builder(getActivity())
                         .setIcon(R.mipmap.ic_launcher)
                         .setTitle(R.string.setting_about_app)
+//                        .setView(R.layout.settings_about)
                         .setMessage(R.string.setting_about_app_msg)
+                        .show();
+            } else if (p.getKey().equals("aboutNotice")) {
+                new AlertDialog.Builder(getActivity())
+                        .setIcon(R.mipmap.ic_launcher)
+                        .setTitle(R.string.setting_about_notice)
+                        .setMessage(R.string.setting_about_notice_msg)
                         .show();
             }
             return true;
