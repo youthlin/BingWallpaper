@@ -82,9 +82,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showImage() {
-        Calendar c = Calendar.getInstance();
-        c.add(Calendar.DATE, -imgcount + 1);//沃德天，记得加一……难怪图片一直不存在泪奔::>_<::
-        Date date = c.getTime();
+//        Calendar c = Calendar.getInstance();
+//        c.add(Calendar.DATE, -imgcount + 1);//沃德天，记得加一……难怪图片一直不存在泪奔::>_<::
+//        Date date = c.getTime();
+        Date date = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd", Locale.US);
         String sDate = sdf.format(date);
         Log.d("info", sDate);
