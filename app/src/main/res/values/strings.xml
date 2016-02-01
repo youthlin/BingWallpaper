@@ -6,7 +6,7 @@
     <string name="mkdir">Directory has been created</string>
     <string name="today">Today</string>
     <string name="pic_downloaded">%1$s has been downloaded</string>
-
+    <string name="local_pic_not_exists">Image is downloading</string>
     <string name="loading">Loading&#8230;</string>
     <string name="pic_not_available">Picture not available</string>
     <string name="set_wallpaper_success">Wallpaper has been set</string>

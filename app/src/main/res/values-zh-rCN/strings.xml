@@ -7,7 +7,7 @@
     <string name="mkdir">已创建目录</string>
     <string name="today">今天</string>
     <string name="pic_downloaded">%1$s 已下载</string>
-
+    <string name="local_pic_not_exists">本地图片不存在,正在下载</string>
     <string name="loading">加载中&#8230;</string>
     <string name="pic_not_available">当前图片不可用</string>
     <string name="set_wallpaper_success">壁纸已设置</string>

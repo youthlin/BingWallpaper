@@ -82,20 +82,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showImage() {
-//        Calendar c = Calendar.getInstance();
-//        c.add(Calendar.DATE, -imgcount + 1);//沃德天，记得加一……难怪图片一直不存在泪奔::>_<::
-//        Date date = c.getTime();
         Date date = new Date();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd", Locale.US);
         String sDate = sdf.format(date);
         Log.d("info", sDate);
         File img = new File(savePath, sDate + ".jpg");
-
         //判断本地是否已有图片
         if (!img.exists()) {
             progressBar.setVisibility(View.VISIBLE);
             Log.d("info", img.getAbsolutePath() + "不存在,即将下载");
-            Toast.makeText(this, "本地图片不存在,即将下载", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.local_pic_not_exists, Toast.LENGTH_SHORT).show();
             downImg();
         } else {
             loadImg();
@@ -161,11 +157,20 @@ public class MainActivity extends AppCompatActivity {
                         for (int i = 0; i < images.length(); i++) {
                             json = images.getJSONObject(i);
                             String date = json.getString("enddate");
-                            String imageurl = json.getString("url").replace("1920x1080", "1080x1920");
-                            //String copyright = json.getString("copyright");
+                            File img = new File(savePath, date + ".jpg");
+                            if (img.exists()) {
+                                continue;//本地图片已存在不再下载
+                            }
+                            //region //不同地区这个json的url是不同的,
+                            //https://github.com/WenhaoWu/BingWallpaper/issues/1#issuecomment-177494837
+                            //在有的地区,url是类似/az/hprichbg/rb/HammockCypress_ZH-CN10587366950_1080x1920.jpg的形式
+                            //在中国是完整路径"url": "http://s.cn.bing.net/az/hprichbg/rb/HammockCypress_ZH-CN10587366950_1920x1080.jpg",
+                            //因此使用urlbase拼接图片地址//endregion
+                            String imageurl = "http://www.bing.com/"
+                                    + json.getString("urlbase") + "_1080x1920.jpg";
                             URL url = new URL(imageurl);
                             InputStream is = url.openStream();
-                            OutputStream os = new FileOutputStream(new File(savePath + date + ".jpg"));
+                            OutputStream os = new FileOutputStream(img);
                             byte[] buf = new byte[4096];
                             int hasread;
                             while ((hasread = is.read(buf)) > 0) {
