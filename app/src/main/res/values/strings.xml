@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">BingWallpaper</string>
+    <string name="app_name">Bing Wallpaper</string>
     <string name="action_settings">Settings</string>
     <string name="settings">Settings</string>
     <string name="set_wallpaper">Set as wallpaper</string>
@@ -13,7 +13,7 @@
     <string name="pic_not_available">Picture not available</string>
     <string name="setting_wallpaper">Setting wallpaper</string>
     <string name="set_wallpaper_success">Wallpaper has been set</string>
-    <string name="set_wallpaper_error">Failed to set wallpaper</string>
+    <string name="set_wallpaper_error">Failed to set wallpaper. Perhaps picture file has been deleted.</string>
 
     <string name="get_json_error">Get data fail, perhaps network is not available</string>
     <string name="network_not_connected">Network not connected</string>

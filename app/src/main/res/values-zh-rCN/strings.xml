@@ -14,7 +14,7 @@
     <string name="pic_not_available">当前图片不可用</string>
     <string name="setting_wallpaper">正在设置壁纸</string>
     <string name="set_wallpaper_success">壁纸已设置</string>
-    <string name="set_wallpaper_error">出错了</string>
+    <string name="set_wallpaper_error">出错了,可能是文件已删除</string>
 
     <string name="get_json_error">获取数据失败,可能是网络不可用</string>
     <string name="network_not_connected">网络未连接</string>

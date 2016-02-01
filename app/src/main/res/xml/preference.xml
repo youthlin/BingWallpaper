@@ -6,7 +6,7 @@
             android:title="@string/setting_auto_set_wallpaper"
             android:summaryOn="@string/setting_auto_set_wallpaper_on"
             android:summaryOff="@string/setting_auto_set_wallpaper_off"
-            android:defaultValue="true"/>
+            android:defaultValue="false" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/setting_about">
         <Preference

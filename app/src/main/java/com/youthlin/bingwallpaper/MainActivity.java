@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
+import android.opengl.Visibility;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -73,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
 
         File path = new File(savePath);
         if (!path.exists()) {
-            path.mkdirs();
+            boolean succ = path.mkdirs();
+            Log.d("info", "创建目录" + succ);
             Toast.makeText(this, R.string.mkdir, Toast.LENGTH_SHORT).show();
         }
         getJson();
@@ -82,15 +84,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showImage() {
-        Date date = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd", Locale.US);
-        String sDate = sdf.format(date);
-        Log.d("info", sDate);
-        File img = new File(savePath, sDate + ".jpg");
+        boolean needDown = false;
+        for (int i = 0; i < imgcount; i++) {
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.DATE, -i);
+            Date date = c.getTime();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd", Locale.US);
+            String sDate = sdf.format(date);
+            File img = new File(savePath + sDate + ".jpg");
+            if (!img.exists()) needDown = true;
+        }
         //判断本地是否已有图片
-        if (!img.exists()) {
+        if (needDown) {
             progressBar.setVisibility(View.VISIBLE);
-            Log.d("info", img.getAbsolutePath() + "不存在,即将下载");
             Toast.makeText(this, R.string.local_pic_not_exists, Toast.LENGTH_SHORT).show();
             downImg();
         } else {
@@ -205,6 +211,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void loadImg() {
+        viewFlipper.removeAllViews();
         for (int i = 0; i < imgcount; i++) {
             Calendar c = Calendar.getInstance();
             c.add(Calendar.DATE, -i);
@@ -229,42 +236,48 @@ public class MainActivity extends AppCompatActivity {
 
     public void showInfo() {
         ImageView iv = (ImageView) viewFlipper.getCurrentView();
-        int count = viewFlipper.getChildCount();
+        int current, count = viewFlipper.getChildCount();
         if (iv == null) {
             textView.setText(R.string.pic_not_available);
             return;
         }
-        for (int i = 0; i < count; i++) {
-            if (iv.equals(viewFlipper.getChildAt(i))) {
+        for (current = 0; current < count; current++) {
+            if (iv.equals(viewFlipper.getChildAt(current))) {
                 break;
             }
         }
         String date = "" + iv.getId();
-        if (date.length() > 0) {
-            if (jsonData != null) {
-                try {
-                    JSONObject json = new JSONObject(jsonData);
-                    JSONArray images = json.getJSONArray("images");
-                    for (int i = 0; i < images.length(); i++) {
-                        json = images.getJSONObject(i);
-                        if (json.getString("enddate").equals(date)) {
-                            Date d = new Date();
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd", Locale.US);
-                            if (date.equals(sdf.format(d)))
-                                date = date + "(" + getResources().getString(R.string.today) + ")";
-                            textView.setText(
-                                    //<!-- Copyright [20160201(Today)](1/8)-->
-                                    //<string name="pic_info">%1$s [%2$s](%3$d/%4$d)</string>
-                                    String.format(
-                                            getResources().getString(R.string.pic_info),
-                                            json.getString("copyright"), date, i + 1, count
-                                    ));
-                        }
+        Date d = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd", Locale.US);
+
+        if (jsonData != null) {
+            try {
+                JSONObject json = new JSONObject(jsonData);
+                JSONArray images = json.getJSONArray("images");
+                for (int i = 0; i < images.length(); i++) {
+                    json = images.getJSONObject(i);
+                    //Log.d("info", "json" + i + json.toString());
+                    if (json.getString("enddate").equals(date)) {
+                        if (date.equals(sdf.format(d)))
+                            date = date + "(" + getResources().getString(R.string.today) + ")";
+                        //<!-- Copyright [20160201(Today)](1/8)-->
+                        //<string name="pic_info">%1$s [%2$s](%3$d/%4$d)</string>
+                        textView.setText(String.format(
+                                getResources().getString(R.string.pic_info),
+                                json.getString("copyright"), date, current + 1, count
+                        ));
+                        Log.d("info", json.getString("copyright"));
+                        break;
                     }
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
+        } else {
+            if (date.equals(sdf.format(d)))
+                date = date + "(" + getResources().getString(R.string.today) + ")";
+            textView.setText(String.format(getResources().getString(R.string.pic_info),
+                    "", date, current + 1, count));
         }
     }
 
@@ -296,9 +309,13 @@ public class MainActivity extends AppCompatActivity {
             case MotionEvent.ACTION_UP: {
                 if (event.getX() - startX > 50) {
                     prev(getCurrentFocus());
-                }
-                if (startX - event.getX() > 50) {
+                } else if (startX - event.getX() > 50) {
                     next(getCurrentFocus());
+                } else {
+                    //点击
+                    if (textView.getVisibility() == View.VISIBLE)
+                        textView.setVisibility(View.INVISIBLE);
+                    else textView.setVisibility(View.VISIBLE);
                 }
                 break;
             }
@@ -361,6 +378,11 @@ public class MainActivity extends AppCompatActivity {
             //wm.suggestDesiredDimensions(screenWidth, screenHeight);
             //endregion
             Bitmap bitmap = BitmapFactory.decodeFile(filename);
+            if (bitmap == null) {
+                //文件已删除
+                handler.sendEmptyMessage(0x12345);
+                return;
+            }
             try {
                 wm.setBitmap(bitmap);
                 handler.sendEmptyMessage(0x1234);
@@ -386,7 +408,7 @@ public class MainActivity extends AppCompatActivity {
         WeakReference<Activity> mActivity;
 
         MyHandler(Activity activity) {
-            mActivity = new WeakReference<Activity>(activity);
+            mActivity = new WeakReference<>(activity);
         }
 
         @Override
@@ -414,6 +436,10 @@ public class MainActivity extends AppCompatActivity {
                 case 0x1234://设置壁纸成功
                     Toast.makeText(theActivity, R.string.set_wallpaper_success, Toast.LENGTH_SHORT).show();
                     break;
+                case 0x12345: {//文件已删除,设置壁纸失败
+                    Toast.makeText(theActivity, R.string.set_wallpaper_error, Toast.LENGTH_SHORT).show();
+                    ((MainActivity) theActivity).downImg();
+                }
                 case 0x2: {//图片已下载
                     Bundle data = msg.getData();
                     ((MainActivity) theActivity).textView.setText(
