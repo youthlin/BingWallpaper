@@ -57,6 +57,7 @@ public class SettingsActivity extends AppCompatActivity {
             System.out.println("Click" + p.getKey());
             if (p.getKey().equals("autoSetWallpaer")) {
                 Toast.makeText(getActivity(), R.string.auto_set_not_available, Toast.LENGTH_SHORT).show();
+
             } else if (p.getKey().equals("aboutApp")) {
                 new AlertDialog.Builder(getActivity())
                         .setIcon(R.mipmap.ic_launcher)
