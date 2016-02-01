@@ -18,17 +18,34 @@
 
     <string name="get_json_error">获取数据失败,可能是网络不可用</string>
     <string name="network_not_connected">网络未连接</string>
+    <string name="down_img_error">下载图片失败,请检查网络</string>
 
     <string name="settings_general">常规</string>
     <string name="setting_auto_set_wallpaper">自动设置壁纸</string>
-    <string name="setting_auto_set_wallpaper_on">自动设置壁纸：开</string>
-    <string name="setting_auto_set_wallpaper_off">自动设置壁纸：关</string>
+    <string-array name="select_frq">
+        <item>关</item>
+        <item>每2小时检查</item>
+        <item>每4小时检查</item>
+        <item>每8小时检查</item>
+        <item>每16小时检查</item>
+        <item>每24小时检查</item>
+    </string-array>
+    <string-array name="select_frq_value">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
     <string name="auto_set_not_available">此功能下个版本添加</string>
 
     <string name="setting_about">关于</string>
     <string name="setting_about_app">关于此应用程序</string>
     <string name="setting_about_notice">声明</string>
-
-    <string name="setting_about_app_msg">关于：\n此应用程序是由<a href="http://youthlin.com">Youth．霖</a>(http://youthlin.com)设计并制作的。您可以在Github(https://github.com/YouthLin/BingWallpaper)上获取本程序的最新源代码。也欢迎到我的博客留言反馈！</string>
+    <string name="open_github">打开github</string>
+    <string name="open_blog">去博客反馈</string>
+    <string name="setting_about_app_msg">关于：\n此应用程序是由<a href="http://youthlin.com">Youth．霖</a>设计并制作的。您可以在<a href="https://github.com/YouthLin/BingWallpaper">Github</a>上获取本程序的最新源代码。也欢迎到我的博客留言反馈！</string>
     <string name="setting_about_notice_msg">声明：\n所有网络传输的数据(json, jpg)都来自必应®，图片版权归原作者所有，或根据必应相关规定界定。本人概不负责任何与版权相关的纠纷，若有违反您的权益，请及时通知本人。此应用程序版权归本人所有。</string>
 </resources>

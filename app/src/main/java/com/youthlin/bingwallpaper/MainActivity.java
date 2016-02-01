@@ -47,12 +47,14 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private ViewFlipper viewFlipper;
     private TextView textView;
-    private String jsonData;
+    public static String jsonData;
     private float startX;
-    private String savePath;
     int screenWidth, screenHeight;
-    final static int imgcount = 8;
-    final static String jsonurl = "http://www.bing.com/HPImageArchive.aspx?format=js&n=" + imgcount;
+
+    public static String savePath = Environment.getExternalStoragePublicDirectory(
+            Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/BingWallpaper/";
+    public final static int imgcount = 8;
+    public final static String jsonurl = "http://www.bing.com/HPImageArchive.aspx?format=js&n=" + imgcount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,8 +71,6 @@ public class MainActivity extends AppCompatActivity {
         DisplayMetrics dm = getResources().getDisplayMetrics();
         screenWidth = dm.widthPixels;
         screenHeight = dm.heightPixels;
-        savePath = Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/BingWallpaper/";
 
         File path = new File(savePath);
         if (!path.exists()) {
@@ -81,27 +81,6 @@ public class MainActivity extends AppCompatActivity {
         getJson();
         showImage();
         showInfo();
-    }
-
-    public void showImage() {
-        boolean needDown = false;
-        for (int i = 0; i < imgcount; i++) {
-            Calendar c = Calendar.getInstance();
-            c.add(Calendar.DATE, -i);
-            Date date = c.getTime();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd", Locale.US);
-            String sDate = sdf.format(date);
-            File img = new File(savePath + sDate + ".jpg");
-            if (!img.exists()) needDown = true;
-        }
-        //判断本地是否已有图片
-        if (needDown) {
-            progressBar.setVisibility(View.VISIBLE);
-            Toast.makeText(this, R.string.local_pic_not_exists, Toast.LENGTH_SHORT).show();
-            downImg();
-        } else {
-            loadImg();
-        }
     }
 
     public void getJson() {
@@ -135,6 +114,28 @@ public class MainActivity extends AppCompatActivity {
             }
         }.start();
     }
+
+    public void showImage() {
+        boolean needDown = false;
+        for (int i = 0; i < imgcount; i++) {
+            Calendar c = Calendar.getInstance();
+            c.add(Calendar.DATE, -i);
+            Date date = c.getTime();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd", Locale.US);
+            String sDate = sdf.format(date);
+            File img = new File(savePath + sDate + ".jpg");
+            if (!img.exists()) needDown = true;
+        }
+        //判断本地是否已有图片
+        if (needDown) {
+            progressBar.setVisibility(View.VISIBLE);
+            Toast.makeText(this, R.string.local_pic_not_exists, Toast.LENGTH_SHORT).show();
+            downImg();
+        } else {
+            loadImg();
+        }
+    }
+
 
     public void downImg() {
         final MyHandler handler = new MyHandler(this);
@@ -404,7 +405,7 @@ public class MainActivity extends AppCompatActivity {
 
     //region //This Handler class should be static or leaks might occur Android
     //http://www.cnblogs.com/jevan/p/3168828.html
-    static class MyHandler extends Handler {
+    public static class MyHandler extends Handler {
         WeakReference<Activity> mActivity;
 
         MyHandler(Activity activity) {

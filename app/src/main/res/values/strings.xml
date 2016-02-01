@@ -17,17 +17,34 @@
 
     <string name="get_json_error">Get data fail, perhaps network is not available</string>
     <string name="network_not_connected">Network not connected</string>
+    <string name="down_img_error">Failed to download wallpaper</string>
 
     <string name="settings_general">General</string>
 
     <string name="setting_auto_set_wallpaper">Auto set wallpaper</string>
-    <string name="setting_auto_set_wallpaper_on">Auto set wallpaper: On</string>
-    <string name="setting_auto_set_wallpaper_off">Auto set wallpaper: Off</string>
+    <string-array name="select_frq">
+        <item>Off</item>
+        <item>Every 2 hours to check</item>
+        <item>Every 4 hours to check</item>
+        <item>Every 8 hours to check</item>
+        <item>Every 16 hours to check</item>
+        <item>Every 24 hours to check</item>
+    </string-array>
+    <string-array name="select_frq_value">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+    </string-array>
+
     <string name="auto_set_not_available">This feature is available at next version</string>
     <string name="setting_about">About</string>
     <string name="setting_about_app">About this application</string>
     <string name="setting_about_notice">Copyright notice</string>
-
-    <string name="setting_about_app_msg">About:\nThis application is design and created by <a href="http://youthlin.com">Youth．霖</a>(http://youthlin.com).  You can get the source code at Github(https://github.com/YouthLin/BingWallpaper), and if you have any suggestions please contact me at my blog.  </string>
+    <string name="open_github">Goto Github</string>
+    <string name="open_blog">Goto Blog</string>
+    <string name="setting_about_app_msg">About:\nThis application is design and created by <a href="http://youthlin.com">Youth．霖</a>.  You can get the source code at <a href="https://github.com/YouthLin/BingWallpaper">Github</a>, and if you have any suggestions please contact me at my blog.</string>
     <string name="setting_about_notice_msg">Notice:\nAll of the data(json or jpg) is from Bing®.  The image copyright is owned by the original author or Bing®.  And this application is copyrighted by my own.  (The Chinese version shall prevail)</string>
 </resources>

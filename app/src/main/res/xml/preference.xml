@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="@string/settings_general">
-        <CheckBoxPreference
-            android:key="autoSetWallpaer"
-            android:title="@string/setting_auto_set_wallpaper"
-            android:summaryOn="@string/setting_auto_set_wallpaper_on"
-            android:summaryOff="@string/setting_auto_set_wallpaper_off"
-            android:defaultValue="false" />
+        <ListPreference
+            android:defaultValue="0"
+            android:entries="@array/select_frq"
+            android:entryValues="@array/select_frq_value"
+            android:key="autoSet"
+            android:title="@string/setting_auto_set_wallpaper" />
+
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/setting_about">
         <Preference
             android:key="aboutApp"
-            android:title="@string/setting_about_app"/>
+            android:title="@string/setting_about_app" />
         <Preference
             android:key="aboutNotice"
-            android:title="@string/setting_about_notice"/>
+            android:title="@string/setting_about_notice" />
     </PreferenceCategory>
 </PreferenceScreen>
