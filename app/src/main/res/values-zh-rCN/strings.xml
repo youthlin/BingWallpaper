@@ -9,7 +9,10 @@
     <string name="pic_downloaded">%1$s 已下载</string>
     <string name="local_pic_not_exists">本地图片不存在,正在下载</string>
     <string name="loading">加载中&#8230;</string>
+    <!-- Copyright [20160201(Today)](1/8)-->
+    <string name="pic_info">%1$s [%2$s](%3$d/%4$d)</string>
     <string name="pic_not_available">当前图片不可用</string>
+    <string name="setting_wallpaper">正在设置壁纸</string>
     <string name="set_wallpaper_success">壁纸已设置</string>
     <string name="set_wallpaper_error">出错了</string>
 

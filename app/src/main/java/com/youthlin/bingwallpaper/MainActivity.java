@@ -229,9 +229,15 @@ public class MainActivity extends AppCompatActivity {
 
     public void showInfo() {
         ImageView iv = (ImageView) viewFlipper.getCurrentView();
+        int count = viewFlipper.getChildCount();
         if (iv == null) {
             textView.setText(R.string.pic_not_available);
             return;
+        }
+        for (int i = 0; i < count; i++) {
+            if (iv.equals(viewFlipper.getChildAt(i))) {
+                break;
+            }
         }
         String date = "" + iv.getId();
         if (date.length() > 0) {
@@ -246,7 +252,13 @@ public class MainActivity extends AppCompatActivity {
                             SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd", Locale.US);
                             if (date.equals(sdf.format(d)))
                                 date = date + "(" + getResources().getString(R.string.today) + ")";
-                            textView.setText(json.getString("copyright") + " [" + date + "]");
+                            textView.setText(
+                                    //<!-- Copyright [20160201(Today)](1/8)-->
+                                    //<string name="pic_info">%1$s [%2$s](%3$d/%4$d)</string>
+                                    String.format(
+                                            getResources().getString(R.string.pic_info),
+                                            json.getString("copyright"), date, i + 1, count
+                                    ));
                         }
                     }
                 } catch (JSONException e) {
@@ -363,7 +375,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public boolean setWallpaper(Context ctx, String filename) {
-        Toast.makeText(ctx, "正在设置壁纸", Toast.LENGTH_SHORT).show();
+        Toast.makeText(ctx, R.string.setting_wallpaper, Toast.LENGTH_SHORT).show();
         new SetWallpaper(ctx, filename).start();
         return true;
     }

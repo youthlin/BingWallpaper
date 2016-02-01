@@ -8,7 +8,10 @@
     <string name="pic_downloaded">%1$s has been downloaded</string>
     <string name="local_pic_not_exists">Image is downloading</string>
     <string name="loading">Loading&#8230;</string>
+    <!-- Copyright [20160201(Today)](1/8)-->
+    <string name="pic_info">%1$s [%2$s](%3$d/%4$d)</string>
     <string name="pic_not_available">Picture not available</string>
+    <string name="setting_wallpaper">Setting wallpaper</string>
     <string name="set_wallpaper_success">Wallpaper has been set</string>
     <string name="set_wallpaper_error">Failed to set wallpaper</string>
 
