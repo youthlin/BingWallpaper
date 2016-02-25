@@ -19,17 +19,10 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
-import android.preference.PreferenceScreen;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.widget.Toast;
-
-import java.net.URI;
-import java.net.URISyntaxException;
 
 //原文使用ActionBarActivity提示已过时
 public class SettingsActivity extends AppCompatActivity {
@@ -107,9 +100,8 @@ public class SettingsActivity extends AppCompatActivity {
                         value = 24;
                         break;
                 }
-                long t = value * 60 * 60 * 1000;
                 manager.setInexactRepeating(AlarmManager.ELAPSED_REALTIME,
-                        0, t, pi);
+                        0, value * 60 * 60 * 1000, pi);
             }
             return true;
         }
@@ -124,17 +116,15 @@ public class SettingsActivity extends AppCompatActivity {
                         .setPositiveButton(R.string.open_github, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                Uri uri = Uri.parse("https://github.com/YouthLin/BingWallpaper");
-                                Intent i = new Intent(Intent.ACTION_VIEW, uri);
-                                startActivity(i);
+                                startActivity(new Intent(Intent.ACTION_VIEW,
+                                        Uri.parse("https://github.com/YouthLin/BingWallpaper")));
                             }
                         })
                         .setNegativeButton(R.string.open_blog, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                Uri uri = Uri.parse("http://youthlin.com");
-                                Intent i = new Intent(Intent.ACTION_VIEW, uri);
-                                startActivity(i);
+                                startActivity(new Intent(Intent.ACTION_VIEW,
+                                        Uri.parse("http://youthlin.com")));
                             }
                         })
                         .show();

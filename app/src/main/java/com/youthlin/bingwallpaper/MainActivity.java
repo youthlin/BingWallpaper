@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
-import android.opengl.Visibility;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -16,10 +15,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -135,7 +134,6 @@ public class MainActivity extends AppCompatActivity {
             loadImg();
         }
     }
-
 
     public void downImg() {
         final MyHandler handler = new MyHandler(this);
@@ -376,9 +374,11 @@ public class MainActivity extends AppCompatActivity {
             //原来是从ImageView getDrawable，
             //但是！！那样得到的Bitmap其实质量不高，因此必须设置期望的壁纸为单屏，才能看起来高清。
             //现在直接设置1920x1080的高清壁纸，就不需要了。
-            //wm.suggestDesiredDimensions(screenWidth, screenHeight);
+            //wm.suggestDesiredDimensions(1080, 1920);
             //endregion
             Bitmap bitmap = BitmapFactory.decodeFile(filename);
+            //bitmap = Bitmap.createScaledBitmap(bitmap, screenWidth * 2, screenHeight, true);
+            //bitmap = Bitmap.createBitmap(bitmap,0,0,screenWidth*2,screenHeight);
             if (bitmap == null) {
                 //文件已删除
                 handler.sendEmptyMessage(0x12345);
@@ -423,7 +423,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case 0x12: {//下载json
                     Bundle data = msg.getData();
-                    ((MainActivity) theActivity).jsonData = data.getString("json");
+                    jsonData = data.getString("json");
                     //Android之NetworkOnMainThreadException异常
                     //http://blog.csdn.net/mad1989/article/details/25964495
                     //主线程UI线程不应联网，使用Handler与新线程结合，线程内传递数据给UI
