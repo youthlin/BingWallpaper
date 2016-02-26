@@ -17,11 +17,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -44,6 +46,12 @@ public class MainActivity extends AppCompatActivity {
         //numColumns = mGridView.getNumColumns();//-1 ???
         numColumns = 3;
         init();
+        mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Log.d(ConstValues.TAG, "点击position=" + position + " id=" + id + " view=" + view);
+            }
+        });
     }
 
     @Override
@@ -80,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
                 ConstValues.savePath + ConstValues.dbName, null);
         Cursor c;
         c = db.rawQuery("SELECT * FROM " + ConstValues.tableName + " ORDER BY date DESC", new String[]{});
-        String date, copyright, link, filepath;
+        String date, urlbase, copyright, link, filepath;
         ArrayList<ImageEntry> list = new ArrayList<>();
         SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
@@ -88,6 +96,7 @@ public class MainActivity extends AppCompatActivity {
         Date tmpDate, today = new Date();
         while (c.moveToNext()) {
             date = c.getString(c.getColumnIndex("date"));
+            urlbase = c.getString(c.getColumnIndex("urlbase"));
             copyright = c.getString(c.getColumnIndex("copyright"));
             link = c.getString(c.getColumnIndex("copyrightlink"));
             filepath = c.getString(c.getColumnIndex("filepath"));
@@ -102,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(ConstValues.TAG, "格式化日期出错,使用默认格式");
                 date = c.getString(c.getColumnIndex("date"));
             }
-            list.add(new ImageEntry(date, copyright, link, filepath));
+            list.add(new ImageEntry(date, urlbase, copyright, link, filepath));
         }
         c.close();
         db.close();
@@ -121,11 +130,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public class ImageEntry {
-        public String mDate, mCopyright, mLink, mFilePath;
+        public String mDate, mUrlBase, mCopyright, mLink, mFilePath;
         private Bitmap mbitmap;
 
-        public ImageEntry(String date, String copyright, String link, String path) {
+        public ImageEntry(String date, String urlbase, String copyright, String link, String path) {
             mDate = date;
+            mUrlBase = urlbase;
             mCopyright = copyright;
             mLink = link;
             mFilePath = path;
@@ -158,6 +168,10 @@ public class MainActivity extends AppCompatActivity {
             for (int i = 0; i < adapter.getCount(); i++) {
                 entry = (ImageEntry) adapter.getItem(i);
                 path = entry.mFilePath;
+                if (!(new File(path)).exists()) {
+                    Log.d(ConstValues.TAG, "图片已被删,正在下载" + path);
+                    SplashActivity.downImg(entry.mUrlBase, new File(path));
+                }
                 BitmapFactory.Options options = new BitmapFactory.Options();
                 options.inSampleSize = 10;
                 bitmap = BitmapFactory.decodeFile(path, options);
@@ -165,16 +179,22 @@ public class MainActivity extends AppCompatActivity {
                 /*Log.d(ConstValues.TAG, "columns=" + numColumns + "width=" + width + " height="
                         + width * ConstValues.picHeight / ConstValues.picWidth);*/
                 newbitmap = ThumbnailUtils.extractThumbnail(bitmap, width, width);
-                bitmap.recycle();
+                if (bitmap != null && !bitmap.isRecycled())
+                    bitmap.recycle();
                 entry.setBitmap(newbitmap);
-                if (newbitmap != null) publishProgress(i, adapter.getCount());
+                if (newbitmap != null) {
+                    publishProgress(i, adapter.getCount());
+                } else {
+                    Log.d(ConstValues.TAG, "获取本地图片缩略图出错" + path);
+                }
+
             }
             return null;
         }
 
         @Override
         public void onProgressUpdate(Integer... values) {
-            //Log.d(ConstValues.TAG, "加载图片:" + values[0] + "/" + values[1]);
+//            Log.d(ConstValues.TAG, "加载图片:" + values[0] + "/" + values[1]);
             adapter.notifyDataSetChanged();
         }
     }

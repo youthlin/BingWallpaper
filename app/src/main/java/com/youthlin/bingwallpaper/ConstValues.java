@@ -10,8 +10,7 @@ public class ConstValues {
             Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/BingWallpaper/";
     public static final String dbName = "img.db";
     public static final String tableName = "ImageInfo";
-    public static final String jsonUrl
-            = "http://cn.bing.com/HPImageArchive.aspx?format=js&idx=21&n=21";
+    public static final String jsonUrl = "http://cn.bing.com/HPImageArchive.aspx?format=js&idx=15&n=15";
     public static final String TAG = "MyTag";
     public static final int FAILURE = 0; // 失败
     public static final int SUCCESS = 1; // 成功

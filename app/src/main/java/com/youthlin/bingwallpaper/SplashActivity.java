@@ -187,19 +187,7 @@ public class SplashActivity extends Activity {
 
                         //region //图片不存在则下载图片
                         if (!img.exists()) {
-                            imageurl = "http://www.bing.com/"
-                                    + urlbase + "_1080x1920.jpg";
-                            URL url = new URL(imageurl);
-                            InputStream is = url.openStream();
-                            OutputStream os = new FileOutputStream(img);
-                            byte[] buf = new byte[4096];
-                            int hasread;
-                            while ((hasread = is.read(buf)) > 0) {
-                                os.write(buf, 0, hasread);
-                            }
-                            is.close();
-                            os.close();
-                            Log.d(ConstValues.TAG, date + ".jpg已下载");
+                            downImg(urlbase, img);
                         }
                         //endregion
 
@@ -226,7 +214,8 @@ public class SplashActivity extends Activity {
                         }//endregion
 
                     }//endregion 遍历
-                } catch (JSONException | IOException e) {
+                } catch (JSONException e) {
+                    e.printStackTrace();
                     Log.d(ConstValues.TAG, "解析json出错");
                     db.close();
                     return ConstValues.FAILURE;
@@ -239,5 +228,25 @@ public class SplashActivity extends Activity {
         }
         db.close();
         return ConstValues.OFFLINE;
+    }
+
+    public static boolean downImg(String urlbase, File img) {
+        try {
+            URL url = new URL("http://www.bing.com/" + urlbase + "_1080x1920.jpg");
+            InputStream is = url.openStream();
+            OutputStream os = new FileOutputStream(img);
+            byte[] buf = new byte[4096];
+            int hasread;
+            while ((hasread = is.read(buf)) > 0) {
+                os.write(buf, 0, hasread);
+            }
+            is.close();
+            os.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        Log.d(ConstValues.TAG, img.getPath() + "已下载");
+        return true;
     }
 }
