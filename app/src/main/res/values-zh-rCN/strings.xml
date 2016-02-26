@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">必应每日壁纸</string>
+    <string name="percent">%1$d%%</string>
+    <string name="percent_detail">%1$d/%2$d</string>
+    <string name="network_not_available">网络不可用</string>
+    <string name="error_parsing_data">解析数据出错</string>
+    <string name="action_settings">设置</string>
+    <string name="images">图像</string>
+    <string name="today">[今天]</string>
+</resources>
