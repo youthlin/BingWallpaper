@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+        mGridView.setSelector(R.drawable.selector_gridview_item);
     }
 
     @Override
