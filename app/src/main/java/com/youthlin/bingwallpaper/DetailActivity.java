@@ -7,6 +7,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.design.widget.AppBarLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -38,11 +39,12 @@ public class DetailActivity extends AppCompatActivity {
     private ViewFlipper flipper;
     private FloatingActionButton mFab;
     private long lastTouchTime = 0;
+    private boolean ready = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        getApplicationContext();
         super.onCreate(savedInstanceState);
+        //Log.d(ConstValues.TAG, "创建=" + System.currentTimeMillis());
         Intent i = getIntent();
         current = i.getIntExtra("current", 0);
         statusHeight = getStatusHeight(this);
@@ -51,10 +53,64 @@ public class DetailActivity extends AppCompatActivity {
         // https://www.zhihu.com/question/19760889/answer/19534818
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);//endregion
-        initView();
+
+        new AsyncTask<Integer, Integer, Bitmap[]>() {
+            @Override
+            protected void onPreExecute() {
+                initView();
+                //Log.d(ConstValues.TAG, "布局=" + System.currentTimeMillis());
+            }
+
+            @Override
+            protected Bitmap[] doInBackground(Integer... params) {
+                list = MainActivity.getList();
+                int current = params[0];
+                Bitmap bitmap0, bitmap1, bitmap2;
+                if (current <= 0)
+                    bitmap0 = (BitmapFactory.decodeFile(list.get(list.size() - 1).mFilePath));
+                else bitmap0 = (BitmapFactory.decodeFile(list.get(current - 1).mFilePath));
+                //publishProgress(1, 3);
+                bitmap1 = BitmapFactory.decodeFile(list.get(current).mFilePath);
+                //publishProgress(2, 3);
+                if (current >= list.size() - 1)
+                    bitmap2 = (BitmapFactory.decodeFile(list.get(0).mFilePath));
+                else bitmap2 = (BitmapFactory.decodeFile(list.get(current + 1).mFilePath));
+                //publishProgress(3, 3);
+                return new Bitmap[]{bitmap0, bitmap1, bitmap2};
+            }
+
+            @Override
+            protected void onProgressUpdate(Integer... values) {
+                //Log.d(ConstValues.TAG, "updated:" + values[0] + "/" + values[1]);
+            }
+
+            @Override
+            protected void onPostExecute(Bitmap[] result) {
+                ImageView imageView = new ImageView(getApplicationContext());
+                imageView.setImageBitmap(result[0]);
+                flipper.addView(imageView);
+                imageView = new ImageView(getApplicationContext());
+                imageView.setImageBitmap(result[1]);
+                flipper.addView(imageView);
+                imageView = new ImageView(getApplicationContext());
+                imageView.setImageBitmap(result[2]);
+                flipper.addView(imageView);
+                flipper.showNext();
+                ready = true;
+                showInfo();
+                mFab.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        new SetWallpaper(getApplication(),
+                                DetailActivity.this, list.get(current).mFilePath).start();
+                    }
+                });
+                //Log.d(ConstValues.TAG, "完成=" + System.currentTimeMillis());
+            }
+        }.execute(current);
     }
 
-    private void recycleImageView(int i) {
+    public void recycleView(int i) {
         ImageView view = (ImageView) flipper.getChildAt(i);
         if (view == null) return;
         Drawable drawable = view.getDrawable();
@@ -63,6 +119,7 @@ public class DetailActivity extends AppCompatActivity {
             Bitmap bitmap = bitmapDrawable.getBitmap();
             if (bitmap != null && !bitmap.isRecycled()) {
                 bitmap.recycle();
+                //Log.d(ConstValues.TAG, "回收Bitmap");
             }
         }
     }
@@ -72,7 +129,7 @@ public class DetailActivity extends AppCompatActivity {
         //[Android Memory] 手动回收ImageVIew的图片资源
         //http://www.cnblogs.com/0616--ataozhijia/p/3954402.html
         for (int i = 0; i < flipper.getChildCount(); i++) {
-            recycleImageView(i);
+            recycleView(i);
         }
         super.onDestroy();
     }
@@ -104,40 +161,13 @@ public class DetailActivity extends AppCompatActivity {
         toolbar.setLayoutParams(params);//endregion
         flipper = (ViewFlipper) findViewById(R.id.flipper);
         mFab = (FloatingActionButton) findViewById(R.id.fab);
-        list = MainActivity.getList();
-        initFlipper();
-        showInfo();
-        mFab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                new SetWallpaper(getApplication(),
-                        DetailActivity.this, list.get(current).mFilePath).start();
-            }
-        });
-    }
-
-    private void initFlipper() {
-        //添加前一幅图
-        ImageView imageView = new ImageView(this);
-        if (current <= 0)
-            imageView.setImageBitmap(BitmapFactory.decodeFile(list.get(list.size() - 1).mFilePath));
-        else imageView.setImageBitmap(BitmapFactory.decodeFile(list.get(current - 1).mFilePath));
-        flipper.addView(imageView);
-        //添加current图像
-        imageView = new ImageView(this);
-        imageView.setImageBitmap(BitmapFactory.decodeFile(list.get(current).mFilePath));
-        flipper.addView(imageView);
-        //添加下一幅图
-        imageView = new ImageView(this);
-        if (current >= list.size() - 1)
-            imageView.setImageBitmap(BitmapFactory.decodeFile(list.get(0).mFilePath));
-        else imageView.setImageBitmap(BitmapFactory.decodeFile(list.get(current + 1).mFilePath));
-        flipper.addView(imageView);
-        //使显示current
-        flipper.showNext();
     }
 
     public void showInfo() {
+        TranslateAnimation animation = new TranslateAnimation(0, 0, 0, description.getHeight());
+        animation.setDuration(200);
+        animation.setFillAfter(true);
+        description.startAnimation(animation);
         description.setText(String.format(Locale.getDefault(),
                 getResources().getString(R.string.description),
                 list.get(current).mDate, current + 1, list.size(), list.get(current).mCopyright));
@@ -148,10 +178,14 @@ public class DetailActivity extends AppCompatActivity {
                 return true;
             }
         });
+        animation = new TranslateAnimation(0, 0, description.getHeight(), 0);
+        animation.setDuration(200);
+        animation.setFillAfter(true);
+        description.startAnimation(animation);
     }
 
     public void next() {
-        Log.d(ConstValues.TAG, "last=" + lastTouchTime);
+        //Log.d(ConstValues.TAG, "last=" + lastTouchTime);
         flipper.setInAnimation(this, R.anim.right_in);
         flipper.setOutAnimation(this, R.anim.right_out);
         flipper.showNext();
@@ -159,6 +193,7 @@ public class DetailActivity extends AppCompatActivity {
         if (current > list.size() - 1) {
             current = 0;
         }
+        recycleView(0);
         flipper.removeViewAt(0);
         ImageView imageView = new ImageView(this);
         Bitmap bitmap;
@@ -176,6 +211,7 @@ public class DetailActivity extends AppCompatActivity {
         flipper.showPrevious();
         current--;
         if (current < 0) current = list.size() - 1;
+        recycleView(flipper.getChildCount() - 1);
         flipper.removeViewAt(flipper.getChildCount() - 1);
         ImageView imageView = new ImageView(this);
         Bitmap bitmap;
@@ -259,7 +295,7 @@ public class DetailActivity extends AppCompatActivity {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-
+        if (!ready) return super.onTouchEvent(event);
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN: {
                 startX = event.getX();

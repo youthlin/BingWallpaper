@@ -50,11 +50,12 @@ public class MainActivity extends AppCompatActivity {
         mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d(ConstValues.TAG, "点击position=" + position + " id=" + id + " view=" + view);
+                //Log.d(ConstValues.TAG, "点击=" + System.currentTimeMillis());
                 Intent i = new Intent(MainActivity.this, DetailActivity.class);
                 i.putExtra("current", position);
                 startActivity(i);
                 overridePendingTransition(R.anim.right_in, R.anim.right_out);
+                //Log.d(ConstValues.TAG, "跳转=" + System.currentTimeMillis());
             }
         });
         mGridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
