@@ -72,9 +72,7 @@ public class MainActivity extends AppCompatActivity {
                 popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
-                        Snackbar.make(findViewById(R.id.fab),
-                                R.string.setting_wallpaper, Snackbar.LENGTH_LONG).show();
-                        new SetWallpaper(getApplicationContext(),
+                        new SetWallpaper(getApplication(), MainActivity.this,
                                 ((ImageEntry) adapter.getItem(position)).mFilePath).start();
                         return true;
                     }
@@ -251,63 +249,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public static class MyHandler extends Handler {
-        WeakReference<AppCompatActivity> mActivity;
-
-        MyHandler(AppCompatActivity activity) {
-            mActivity = new WeakReference<>(activity);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-            AppCompatActivity activity = mActivity.get();
-            switch (msg.what) {
-                case ConstValues.SET_WALLPAPER_SUCCESS:
-                    Snackbar.make(activity.findViewById(R.id.fab),
-                            R.string.set_wallpaper_succ, Snackbar.LENGTH_LONG).show();
-                    break;
-                case ConstValues.FILE_NOT_FOUND:
-                    Snackbar.make(activity.findViewById(R.id.fab),
-                            R.string.set_wallpaper_file_not_found, Snackbar.LENGTH_LONG).show();
-                    break;
-                case ConstValues.IO_EXCEPTION:
-                    Snackbar.make(activity.findViewById(R.id.fab),
-                            R.string.set_wallpaper_io_exception, Snackbar.LENGTH_LONG).show();
-                    break;
-            }
-        }
-    }
-
-    public class SetWallpaper extends Thread {
-        Context ctx;
-        String filename;
-        MyHandler handler;
-
-        public SetWallpaper(Context ctx, String filename) {
-            this.ctx = ctx;
-            this.filename = filename;
-            handler = new MyHandler(MainActivity.this);
-        }
-
-        @Override
-        public void run() {
-            WallpaperManager wm = WallpaperManager.getInstance(ctx);
-            Bitmap bitmap = BitmapFactory.decodeFile(filename);
-            if (bitmap == null) {
-                handler.sendEmptyMessage(ConstValues.FILE_NOT_FOUND);
-                return;
-            }
-            try {
-                wm.setBitmap(bitmap);
-                handler.sendEmptyMessage(ConstValues.SET_WALLPAPER_SUCCESS);
-            } catch (IOException e) {
-                e.printStackTrace();
-                handler.sendEmptyMessage(ConstValues.IO_EXCEPTION);
-            }
-            //记得回收图片防止OutOfMemory
-            if (!bitmap.isRecycled())
-                bitmap.recycle();
-        }
-    }
 }
