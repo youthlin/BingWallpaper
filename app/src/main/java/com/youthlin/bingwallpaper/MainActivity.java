@@ -1,6 +1,8 @@
 package com.youthlin.bingwallpaper;
 
+import android.app.WallpaperManager;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
@@ -8,10 +10,14 @@ import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,9 +27,12 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import java.io.File;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -41,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
         mGridView = (GridView) findViewById(R.id.gridView);
         //numColumns = mGridView.getNumColumns();//-1 ???
         numColumns = 3;
@@ -50,6 +58,29 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Log.d(ConstValues.TAG, "点击position=" + position + " id=" + id + " view=" + view);
+                Intent i = new Intent(MainActivity.this, DetailActivity.class);
+                i.putExtra("current", position);
+                startActivity(i);
+                overridePendingTransition(R.anim.right_in, R.anim.right_out);
+            }
+        });
+        mGridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long id) {
+                final PopupMenu popupMenu = new PopupMenu(getApplication(), view);
+                getMenuInflater().inflate(R.menu.popup_menu, popupMenu.getMenu());
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        Snackbar.make(findViewById(R.id.fab),
+                                R.string.setting_wallpaper, Snackbar.LENGTH_LONG).show();
+                        new SetWallpaper(getApplicationContext(),
+                                ((ImageEntry) adapter.getItem(position)).mFilePath).start();
+                        return true;
+                    }
+                });
+                popupMenu.show();
+                return true;
             }
         });
     }
@@ -58,11 +89,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         ArrayList<ImageEntry> list = adapter.list;
         for (ImageEntry entry : list) {
-            if (entry.getBitmap() != null)
-                if (!entry.getBitmap().isRecycled()) {
-                    entry.getBitmap().recycle();
-                    entry.setBitmap(null);
-                }
+            Bitmap bitmap = entry.getBitmap();
+            if (bitmap != null && !bitmap.isRecycled()) {
+                bitmap.recycle();
+            }
+            entry.setBitmap(null);
         }
         super.onDestroy();
     }
@@ -78,22 +109,25 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_settings:
-                return true;
+                break;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        return super.onOptionsItemSelected(item);
-    }//endregion
+        return true;
+    }
+    //endregion
 
-    private void init() {
+    public static ArrayList<ImageEntry> getList() {
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
                 ConstValues.savePath + ConstValues.dbName, null);
         Cursor c;
-        c = db.rawQuery("SELECT * FROM " + ConstValues.tableName + " ORDER BY date DESC", new String[]{});
+        c = db.rawQuery("SELECT * FROM " + ConstValues.tableName + " ORDER BY date DESC",
+                new String[]{});
         String date, urlbase, copyright, link, filepath;
         ArrayList<ImageEntry> list = new ArrayList<>();
         SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
         SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
-
-        Date tmpDate, today = new Date();
+        Date tmpDate;
         while (c.moveToNext()) {
             date = c.getString(c.getColumnIndex("date"));
             urlbase = c.getString(c.getColumnIndex("urlbase"));
@@ -102,10 +136,7 @@ public class MainActivity extends AppCompatActivity {
             filepath = c.getString(c.getColumnIndex("filepath"));
             try {
                 tmpDate = sdf2.parse(date);
-                if (sdf2.format(today).equals(date))
-                    date = getResources().getString(R.string.today);
-                else
-                    date = sdf1.format(tmpDate);
+                date = sdf1.format(tmpDate);
             } catch (ParseException e) {
                 e.printStackTrace();
                 Log.d(ConstValues.TAG, "格式化日期出错,使用默认格式");
@@ -115,7 +146,10 @@ public class MainActivity extends AppCompatActivity {
         }
         c.close();
         db.close();
+        return list;
+    }
 
+    private void init() {
         //region GridView异步加载本地图片缩略图
         /**
          * GridView异步加载本地图片缩略图
@@ -124,33 +158,12 @@ public class MainActivity extends AppCompatActivity {
          * Android 利用 AsyncTask 异步读取网络图片
          * @link http://www.cnblogs.com/_ymw/p/4140418.html
          */
-        adapter = new MyGridViewAdapter(this, list);
+        adapter = new MyGridViewAdapter(this, getList());
         mGridView.setAdapter(adapter);
         new ImageLoadAsyncTask(adapter).execute();//endregion
     }
 
-    public class ImageEntry {
-        public String mDate, mUrlBase, mCopyright, mLink, mFilePath;
-        private Bitmap mbitmap;
-
-        public ImageEntry(String date, String urlbase, String copyright, String link, String path) {
-            mDate = date;
-            mUrlBase = urlbase;
-            mCopyright = copyright;
-            mLink = link;
-            mFilePath = path;
-        }
-
-        public Bitmap getBitmap() {
-            return mbitmap;
-        }
-
-        public void setBitmap(Bitmap b) {
-            mbitmap = b;
-        }
-    }
-
-    private class ImageLoadAsyncTask extends AsyncTask<Void, Integer, Integer> {
+    private class ImageLoadAsyncTask extends AsyncTask<Void, Integer, Void> {
         private MyGridViewAdapter adapter;
 
         public ImageLoadAsyncTask(MyGridViewAdapter a) {
@@ -159,12 +172,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected Integer doInBackground(Void... params) {
+        protected Void doInBackground(Void... params) {
             ImageEntry entry;
             String path;
             Bitmap bitmap, newbitmap;
             DisplayMetrics dm = getResources().getDisplayMetrics();
-            int width;
+            int width = dm.widthPixels / numColumns;
             for (int i = 0; i < adapter.getCount(); i++) {
                 entry = (ImageEntry) adapter.getItem(i);
                 path = entry.mFilePath;
@@ -175,9 +188,6 @@ public class MainActivity extends AppCompatActivity {
                 BitmapFactory.Options options = new BitmapFactory.Options();
                 options.inSampleSize = 10;
                 bitmap = BitmapFactory.decodeFile(path, options);
-                width = dm.widthPixels / numColumns;
-                /*Log.d(ConstValues.TAG, "columns=" + numColumns + "width=" + width + " height="
-                        + width * ConstValues.picHeight / ConstValues.picWidth);*/
                 newbitmap = ThumbnailUtils.extractThumbnail(bitmap, width, width);
                 if (bitmap != null && !bitmap.isRecycled())
                     bitmap.recycle();
@@ -187,14 +197,12 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     Log.d(ConstValues.TAG, "获取本地图片缩略图出错" + path);
                 }
-
             }
             return null;
         }
 
         @Override
         public void onProgressUpdate(Integer... values) {
-//            Log.d(ConstValues.TAG, "加载图片:" + values[0] + "/" + values[1]);
             adapter.notifyDataSetChanged();
         }
     }
@@ -230,9 +238,76 @@ public class MainActivity extends AppCompatActivity {
                 convertView = LayoutInflater.from(context).inflate(R.layout.gridview_item, null);
             ImageView imageView = (ImageView) convertView.findViewById(R.id.gridViewItemImg);
             TextView textView = (TextView) convertView.findViewById(R.id.gridViewItemText);
-            imageView.setImageBitmap(list.get(position).getBitmap());
+            Bitmap img = list.get(position).getBitmap();
+            if (img == null) {
+                int width = getResources().getDisplayMetrics().widthPixels;
+                int[] colors = new int[width * width];
+                img = Bitmap.createBitmap(colors, width, width, Bitmap.Config.ALPHA_8);
+            }
+            imageView.setImageBitmap(img);
             textView.setText(list.get(position).mDate);
+            //registerForContextMenu(convertView);
             return convertView;
+        }
+    }
+
+    public static class MyHandler extends Handler {
+        WeakReference<AppCompatActivity> mActivity;
+
+        MyHandler(AppCompatActivity activity) {
+            mActivity = new WeakReference<>(activity);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            AppCompatActivity activity = mActivity.get();
+            switch (msg.what) {
+                case ConstValues.SET_WALLPAPER_SUCCESS:
+                    Snackbar.make(activity.findViewById(R.id.fab),
+                            R.string.set_wallpaper_succ, Snackbar.LENGTH_LONG).show();
+                    break;
+                case ConstValues.FILE_NOT_FOUND:
+                    Snackbar.make(activity.findViewById(R.id.fab),
+                            R.string.set_wallpaper_file_not_found, Snackbar.LENGTH_LONG).show();
+                    break;
+                case ConstValues.IO_EXCEPTION:
+                    Snackbar.make(activity.findViewById(R.id.fab),
+                            R.string.set_wallpaper_io_exception, Snackbar.LENGTH_LONG).show();
+                    break;
+            }
+        }
+    }
+
+    public class SetWallpaper extends Thread {
+        Context ctx;
+        String filename;
+        MyHandler handler;
+
+        public SetWallpaper(Context ctx, String filename) {
+            this.ctx = ctx;
+            this.filename = filename;
+            handler = new MyHandler(MainActivity.this);
+        }
+
+        @Override
+        public void run() {
+            WallpaperManager wm = WallpaperManager.getInstance(ctx);
+            Bitmap bitmap = BitmapFactory.decodeFile(filename);
+            if (bitmap == null) {
+                handler.sendEmptyMessage(ConstValues.FILE_NOT_FOUND);
+                return;
+            }
+            try {
+                wm.setBitmap(bitmap);
+                handler.sendEmptyMessage(ConstValues.SET_WALLPAPER_SUCCESS);
+            } catch (IOException e) {
+                e.printStackTrace();
+                handler.sendEmptyMessage(ConstValues.IO_EXCEPTION);
+            }
+            //记得回收图片防止OutOfMemory
+            if (!bitmap.isRecycled())
+                bitmap.recycle();
         }
     }
 }
