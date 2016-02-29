@@ -41,6 +41,7 @@ public class DetailActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getApplicationContext();
         super.onCreate(savedInstanceState);
         Intent i = getIntent();
         current = i.getIntExtra("current", 0);
