@@ -15,4 +15,5 @@
     <string name="set_wallpaper_succ">设置壁纸成功</string>
     <string name="set_wallpaper_file_not_found">找不到文件。请尝试重启程序</string>
     <string name="set_wallpaper_io_exception">发生了错误(IOException)</string>
+    <string name="set_wallpaper_too_fast">操作频率太快，1秒后重试</string>
 </resources>

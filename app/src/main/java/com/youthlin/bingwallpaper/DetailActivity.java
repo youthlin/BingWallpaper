@@ -64,7 +64,7 @@ public class DetailActivity extends AppCompatActivity {
 
             @Override
             protected Bitmap[] doInBackground(Integer... params) {
-                list = ImageEntry.getList();
+                list = ImageEntry.getList(getApplication());
                 int current = params[0];
                 Bitmap bitmap0 = null, bitmap1 = null, bitmap2 = null;
                 try {

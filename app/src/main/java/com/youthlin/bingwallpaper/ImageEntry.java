@@ -43,11 +43,14 @@ public class ImageEntry {
         mbitmap = b;
     }
 
-    public static ArrayList<ImageEntry> getList() {
+    public static ArrayList<ImageEntry> getList(Context context) {
         File path = new File(ConstValues.savePath);
         if (!path.exists()) {
             boolean mkdirs = path.mkdirs();
             Log.d(ConstValues.TAG, "创建目录成功吗：" + mkdirs);
+        }
+        if (ConstValues.dbPath == null) {
+            ConstValues.dbPath = context.getFilesDir().getAbsolutePath() + "/";
         }
         SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
                 ConstValues.dbPath + ConstValues.dbName, null);

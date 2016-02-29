@@ -16,4 +16,5 @@
     <string name="set_wallpaper_succ">Wallpaper has been set</string>
     <string name="set_wallpaper_file_not_found">File not found.Try to restart app.</string>
     <string name="set_wallpaper_io_exception">Error occurred(IOException)</string>
+    <string name="set_wallpaper_too_fast">Set wallpaper too fast,wait 1 second</string>
 </resources>

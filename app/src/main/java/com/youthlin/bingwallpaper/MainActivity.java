@@ -120,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
          * Android 利用 AsyncTask 异步读取网络图片
          * @link http://www.cnblogs.com/_ymw/p/4140418.html
          */
-        adapter = new MyGridViewAdapter(this, ImageEntry.getList());
+        adapter = new MyGridViewAdapter(this, ImageEntry.getList(getApplication()));
         mGridView.setAdapter(adapter);
         new ImageLoadAsyncTask(adapter).execute();//endregion
     }

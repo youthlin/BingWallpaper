@@ -30,22 +30,25 @@ public class SetWallpaper extends Thread {
             super.handleMessage(msg);
             AppCompatActivity activity = mActivity.get();
             switch (msg.what) {
+                case ConstValues.TOO_FAST:
+                    Toast.makeText(activity, R.string.set_wallpaper_too_fast, Toast.LENGTH_SHORT).show();
+                    break;
                 case ConstValues.SETTING_WALLPAPER:
                     Toast.makeText(activity, R.string.setting_wallpaper, Toast.LENGTH_SHORT).show();
                     break;
                 case ConstValues.SET_WALLPAPER_SUCCESS:
                     Toast.makeText(activity, R.string.set_wallpaper_succ, Toast.LENGTH_SHORT).show();
-                    /*NotificationManager manager = (NotificationManager)
-                            activity.getSystemService(Context.NOTIFICATION_SERVICE);
-                    manager.cancel(0);
-                    Notification notification = new Notification.Builder(activity)
-                            .setSmallIcon(R.mipmap.ic_launcher)
-                            .setTicker(activity.getResources()
-                                    .getString(R.string.set_wallpaper_succ))
-                            .setContentTitle(activity.getResources()
-                                    .getString(R.string.set_wallpaper_succ))
-                            .setAutoCancel(true).getNotification();
-                    manager.notify(0, notification);*/
+//                    NotificationManager manager = (NotificationManager)
+//                            activity.getSystemService(Context.NOTIFICATION_SERVICE);
+//                    manager.cancel(0);
+//                    Notification notification = new Notification.Builder(activity)
+//                            .setSmallIcon(R.mipmap.ic_launcher)
+//                            .setTicker(activity.getResources()
+//                                    .getString(R.string.set_wallpaper_succ))
+//                            .setContentTitle(activity.getResources()
+//                                    .getString(R.string.set_wallpaper_succ))
+//                            .setAutoCancel(true).getNotification();
+//                    manager.notify(0, notification);
                     break;
                 case ConstValues.FILE_NOT_FOUND:
                     Toast.makeText(activity, R.string.set_wallpaper_file_not_found, Toast.LENGTH_SHORT).show();
@@ -60,6 +63,7 @@ public class SetWallpaper extends Thread {
     Context ctx;
     String filename;
     MyHandler handler;
+    static long lastSetTime = 0;
 
     public SetWallpaper(Context ctx, AppCompatActivity activity, String filename) {
         this.ctx = ctx;
@@ -69,6 +73,11 @@ public class SetWallpaper extends Thread {
 
     @Override
     public void run() {
+        if (System.currentTimeMillis() - lastSetTime < 1000) {
+            handler.sendEmptyMessage(ConstValues.TOO_FAST);
+            return;
+        }
+        lastSetTime = System.currentTimeMillis();
         handler.sendEmptyMessage(ConstValues.SETTING_WALLPAPER);
         WallpaperManager wm = WallpaperManager.getInstance(ctx);
         Bitmap bitmap = BitmapFactory.decodeFile(filename);

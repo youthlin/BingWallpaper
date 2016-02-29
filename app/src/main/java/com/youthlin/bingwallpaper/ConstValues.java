@@ -33,5 +33,6 @@ public class ConstValues {
     public static final int SET_WALLPAPER_SUCCESS = 0x1;
     public static final int IO_EXCEPTION = 0x2;
     public static final int FILE_NOT_FOUND = 0x3;
+    public static final int TOO_FAST = 0x4;
 
 }
