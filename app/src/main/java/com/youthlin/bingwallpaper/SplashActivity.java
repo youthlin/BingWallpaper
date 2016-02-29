@@ -4,14 +4,10 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteCursorDriver;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQuery;
 import android.net.ConnectivityManager;
 import android.os.AsyncTask;
-//import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -21,14 +17,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.awt.font.TextAttribute;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -137,11 +131,14 @@ public class SplashActivity extends Activity {
         File path = new File(ConstValues.savePath);
         if (!path.exists()) {
             boolean mkdirs = path.mkdirs();
-            Log.d(ConstValues.TAG, "创建目录:" + mkdirs + path.getAbsolutePath());
+            Log.d(ConstValues.TAG, "创建目录成功吗:" + mkdirs + ";path=" + path.getAbsolutePath());
+        }
+        if (ConstValues.dbPath == null) {
+            ConstValues.dbPath = getApplicationContext().getFilesDir().getAbsolutePath() + "/";
         }
         //打开数据库(不存在则创建)
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(ConstValues.savePath
-                + ConstValues.dbName, null);
+        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                ConstValues.dbPath + ConstValues.dbName, null);
         Log.d(ConstValues.TAG, db.getPath());
         //创建表(已有则不创建)
         db.execSQL("create table if not exists " + ConstValues.tableName
@@ -176,8 +173,8 @@ public class SplashActivity extends Activity {
                     boolean hasresult;
                     String imageurl;
                     //region //遍历
-                    for (int i = 0; i < images.length(); i++) {
-                        a.publish(i, images.length());
+                    for (int i = images.length() - 1; i >= 0; i--) {
+                        a.publish(images.length() - i - 1, images.length());
                         json = images.getJSONObject(i);
                         String date = json.getString("enddate"),
                                 urlbase = json.getString("urlbase"),
@@ -187,7 +184,7 @@ public class SplashActivity extends Activity {
 
                         //region //图片不存在则下载图片
                         if (!img.exists()) {
-                            downImg(urlbase, img);
+                            ImageEntry.downImg(getApplication(), urlbase, img);
                         }
                         //endregion
 
@@ -214,6 +211,7 @@ public class SplashActivity extends Activity {
                         }//endregion
 
                     }//endregion 遍历
+                    //ImageEntry.updateMediaDir(getApplicationContext(), ConstValues.savePath);
                 } catch (JSONException e) {
                     e.printStackTrace();
                     Log.d(ConstValues.TAG, "解析json出错");
@@ -228,25 +226,5 @@ public class SplashActivity extends Activity {
         }
         db.close();
         return ConstValues.OFFLINE;
-    }
-
-    public static boolean downImg(String urlbase, File img) {
-        try {
-            URL url = new URL("http://www.bing.com/" + urlbase + "_1080x1920.jpg");
-            InputStream is = url.openStream();
-            OutputStream os = new FileOutputStream(img);
-            byte[] buf = new byte[4096];
-            int hasread;
-            while ((hasread = is.read(buf)) > 0) {
-                os.write(buf, 0, hasread);
-            }
-            is.close();
-            os.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        Log.d(ConstValues.TAG, img.getPath() + "已下载");
-        return true;
     }
 }

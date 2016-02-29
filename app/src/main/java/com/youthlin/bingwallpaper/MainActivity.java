@@ -110,37 +110,6 @@ public class MainActivity extends AppCompatActivity {
     }
     //endregion
 
-    public static ArrayList<ImageEntry> getList() {
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
-                ConstValues.savePath + ConstValues.dbName, null);
-        Cursor c;
-        c = db.rawQuery("SELECT * FROM " + ConstValues.tableName + " ORDER BY date DESC",
-                new String[]{});
-        String date, urlbase, copyright, link, filepath;
-        ArrayList<ImageEntry> list = new ArrayList<>();
-        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        SimpleDateFormat sdf2 = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
-        Date tmpDate;
-        while (c.moveToNext()) {
-            date = c.getString(c.getColumnIndex("date"));
-            urlbase = c.getString(c.getColumnIndex("urlbase"));
-            copyright = c.getString(c.getColumnIndex("copyright"));
-            link = c.getString(c.getColumnIndex("copyrightlink"));
-            filepath = c.getString(c.getColumnIndex("filepath"));
-            try {
-                tmpDate = sdf2.parse(date);
-                date = sdf1.format(tmpDate);
-            } catch (ParseException e) {
-                e.printStackTrace();
-                Log.d(ConstValues.TAG, "格式化日期出错,使用默认格式");
-                date = c.getString(c.getColumnIndex("date"));
-            }
-            list.add(new ImageEntry(date, urlbase, copyright, link, filepath));
-        }
-        c.close();
-        db.close();
-        return list;
-    }
 
     private void init() {
         //region GridView异步加载本地图片缩略图
@@ -151,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
          * Android 利用 AsyncTask 异步读取网络图片
          * @link http://www.cnblogs.com/_ymw/p/4140418.html
          */
-        adapter = new MyGridViewAdapter(this, getList());
+        adapter = new MyGridViewAdapter(this, ImageEntry.getList());
         mGridView.setAdapter(adapter);
         new ImageLoadAsyncTask(adapter).execute();//endregion
     }
@@ -176,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
                 path = entry.mFilePath;
                 if (!(new File(path)).exists()) {
                     Log.d(ConstValues.TAG, "图片已被删,正在下载" + path);
-                    SplashActivity.downImg(entry.mUrlBase, new File(path));
+                    ImageEntry.downImg(getApplicationContext(), entry.mUrlBase, new File(path));
                 }
                 BitmapFactory.Options options = new BitmapFactory.Options();
                 options.inSampleSize = 10;

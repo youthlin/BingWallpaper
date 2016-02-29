@@ -1,6 +1,7 @@
 package com.youthlin.bingwallpaper;
 
 import android.os.Environment;
+import android.util.Log;
 
 /**
  * Created by lin on 2016-02-26-026.
@@ -11,10 +12,13 @@ public class ConstValues {
             return Environment.getExternalStoragePublicDirectory(
                     Environment.DIRECTORY_PICTURES).getAbsolutePath() + "/BingWallpaper/";
         } else
-            return Environment.getDataDirectory().getAbsolutePath() + "/BingWallpaper/";
+            return Environment.getDataDirectory().getAbsolutePath()// getDataDirectory: /data
+                    + "/data/" + packageName + "/BingWallpaper/";
     }
 
+    public static final String packageName = "com.youthlin.bingwallpaper";
     public static final String savePath = getSavePath();
+    public static String dbPath = null;
     public static final String dbName = "img.db";
     public static final String tableName = "ImageInfo";
     public static final String jsonUrl = "http://cn.bing.com/HPImageArchive.aspx?format=js&idx=15&n=15";

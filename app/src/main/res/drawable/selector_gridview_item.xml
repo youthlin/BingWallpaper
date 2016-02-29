@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--利用selector shape方式改变listView或者GridView的Item选中边框（代码中设置setSelector）
+    http://blog.csdn.net/chark_leo/article/details/41489225
+    mGridView.setSelector(R.drawable.selector_gridview_item); -->
     <item>
         <shape>
             <solid android:color="@color/colorAccent" />

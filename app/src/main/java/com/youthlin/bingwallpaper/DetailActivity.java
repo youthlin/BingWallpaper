@@ -23,6 +23,7 @@ import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import java.util.ArrayList;
@@ -63,19 +64,23 @@ public class DetailActivity extends AppCompatActivity {
 
             @Override
             protected Bitmap[] doInBackground(Integer... params) {
-                list = MainActivity.getList();
+                list = ImageEntry.getList();
                 int current = params[0];
-                Bitmap bitmap0, bitmap1, bitmap2;
-                if (current <= 0)
-                    bitmap0 = (BitmapFactory.decodeFile(list.get(list.size() - 1).mFilePath));
-                else bitmap0 = (BitmapFactory.decodeFile(list.get(current - 1).mFilePath));
-                //publishProgress(1, 3);
-                bitmap1 = BitmapFactory.decodeFile(list.get(current).mFilePath);
-                //publishProgress(2, 3);
-                if (current >= list.size() - 1)
-                    bitmap2 = (BitmapFactory.decodeFile(list.get(0).mFilePath));
-                else bitmap2 = (BitmapFactory.decodeFile(list.get(current + 1).mFilePath));
-                //publishProgress(3, 3);
+                Bitmap bitmap0 = null, bitmap1 = null, bitmap2 = null;
+                try {
+                    if (current <= 0)
+                        bitmap0 = (BitmapFactory.decodeFile(list.get(list.size() - 1).mFilePath));
+                    else bitmap0 = (BitmapFactory.decodeFile(list.get(current - 1).mFilePath));
+                    //publishProgress(1, 3);
+                    bitmap1 = BitmapFactory.decodeFile(list.get(current).mFilePath);
+                    //publishProgress(2, 3);
+                    if (current >= list.size() - 1)
+                        bitmap2 = (BitmapFactory.decodeFile(list.get(0).mFilePath));
+                    else bitmap2 = (BitmapFactory.decodeFile(list.get(current + 1).mFilePath));
+                    //publishProgress(3, 3);
+                } catch (IndexOutOfBoundsException e) {
+                    Log.d(ConstValues.TAG, "list为空,数组越界");
+                }
                 return new Bitmap[]{bitmap0, bitmap1, bitmap2};
             }
 
@@ -86,6 +91,10 @@ public class DetailActivity extends AppCompatActivity {
 
             @Override
             protected void onPostExecute(Bitmap[] result) {
+                if (result[0] == null || result[1] == null || result[2] == null) {
+                    Toast.makeText(getApplicationContext(),
+                            R.string.set_wallpaper_file_not_found, Toast.LENGTH_SHORT).show();
+                }
                 ImageView imageView = new ImageView(getApplicationContext());
                 imageView.setImageBitmap(result[0]);
                 flipper.addView(imageView);
@@ -101,8 +110,12 @@ public class DetailActivity extends AppCompatActivity {
                 mFab.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        new SetWallpaper(getApplication(),
-                                DetailActivity.this, list.get(current).mFilePath).start();
+                        try {
+                            new SetWallpaper(getApplication(),
+                                    DetailActivity.this, list.get(current).mFilePath).start();
+                        } catch (IndexOutOfBoundsException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
                 //Log.d(ConstValues.TAG, "完成=" + System.currentTimeMillis());
@@ -168,16 +181,20 @@ public class DetailActivity extends AppCompatActivity {
         animation.setDuration(200);
         animation.setFillAfter(true);
         description.startAnimation(animation);
-        description.setText(String.format(Locale.getDefault(),
-                getResources().getString(R.string.description),
-                list.get(current).mDate, current + 1, list.size(), list.get(current).mCopyright));
-        description.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(list.get(current).mLink)));
-                return true;
-            }
-        });
+        try {
+            description.setText(String.format(Locale.getDefault(),
+                    getResources().getString(R.string.description),
+                    list.get(current).mDate, current + 1, list.size(), list.get(current).mCopyright));
+            description.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(list.get(current).mLink)));
+                    return true;
+                }
+            });
+        } catch (IndexOutOfBoundsException e) {
+            description.setText(R.string.set_wallpaper_file_not_found);
+        }
         animation = new TranslateAnimation(0, 0, description.getHeight(), 0);
         animation.setDuration(200);
         animation.setFillAfter(true);
@@ -196,10 +213,14 @@ public class DetailActivity extends AppCompatActivity {
         recycleView(0);
         flipper.removeViewAt(0);
         ImageView imageView = new ImageView(this);
-        Bitmap bitmap;
-        if (current >= list.size() - 1) {
-            bitmap = BitmapFactory.decodeFile(list.get(0).mFilePath);
-        } else bitmap = BitmapFactory.decodeFile(list.get(current + 1).mFilePath);
+        Bitmap bitmap = null;
+        try {
+            if (current >= list.size() - 1) {
+                bitmap = BitmapFactory.decodeFile(list.get(0).mFilePath);
+            } else bitmap = BitmapFactory.decodeFile(list.get(current + 1).mFilePath);
+        } catch (IndexOutOfBoundsException e) {
+            e.printStackTrace();
+        }
         imageView.setImageBitmap(bitmap);
         flipper.addView(imageView);
         showInfo();
@@ -214,9 +235,14 @@ public class DetailActivity extends AppCompatActivity {
         recycleView(flipper.getChildCount() - 1);
         flipper.removeViewAt(flipper.getChildCount() - 1);
         ImageView imageView = new ImageView(this);
-        Bitmap bitmap;
-        if (current <= 0) bitmap = BitmapFactory.decodeFile(list.get(list.size() - 1).mFilePath);
-        else bitmap = BitmapFactory.decodeFile(list.get(current - 1).mFilePath);
+        Bitmap bitmap = null;
+        try {
+            if (current <= 0)
+                bitmap = BitmapFactory.decodeFile(list.get(list.size() - 1).mFilePath);
+            else bitmap = BitmapFactory.decodeFile(list.get(current - 1).mFilePath);
+        } catch (IndexOutOfBoundsException e) {
+            e.printStackTrace();
+        }
         imageView.setImageBitmap(bitmap);
         flipper.addView(imageView, 0);
         showInfo();
