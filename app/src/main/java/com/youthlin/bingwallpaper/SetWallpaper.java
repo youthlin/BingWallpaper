@@ -1,5 +1,7 @@
 package com.youthlin.bingwallpaper;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.WallpaperManager;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -33,6 +35,17 @@ public class SetWallpaper extends Thread {
                     break;
                 case ConstValues.SET_WALLPAPER_SUCCESS:
                     Toast.makeText(activity, R.string.set_wallpaper_succ, Toast.LENGTH_SHORT).show();
+                    /*NotificationManager manager = (NotificationManager)
+                            activity.getSystemService(Context.NOTIFICATION_SERVICE);
+                    manager.cancel(0);
+                    Notification notification = new Notification.Builder(activity)
+                            .setSmallIcon(R.mipmap.ic_launcher)
+                            .setTicker(activity.getResources()
+                                    .getString(R.string.set_wallpaper_succ))
+                            .setContentTitle(activity.getResources()
+                                    .getString(R.string.set_wallpaper_succ))
+                            .setAutoCancel(true).getNotification();
+                    manager.notify(0, notification);*/
                     break;
                 case ConstValues.FILE_NOT_FOUND:
                     Toast.makeText(activity, R.string.set_wallpaper_file_not_found, Toast.LENGTH_SHORT).show();
