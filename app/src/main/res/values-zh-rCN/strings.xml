@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">必应每日壁纸</string>
+    <string name="percent0">0%</string>
     <string name="percent">%1$d%%</string>
     <string name="percent_detail">%1$d/%2$d</string>
     <string name="network_not_available">网络不可用</string>
@@ -11,9 +12,23 @@
 
     <string name="title_activity_detail">详情页</string>
     <string name="set_as_wallpaper">设为壁纸</string>
+    <string name="description">%1$s (%2$d/%3$d)\n%4$s</string>
     <string name="setting_wallpaper">正在设置壁纸</string>
     <string name="set_wallpaper_succ">设置壁纸成功</string>
     <string name="set_wallpaper_file_not_found">找不到文件。请尝试重启程序</string>
     <string name="set_wallpaper_io_exception">发生了错误(IOException)</string>
     <string name="set_wallpaper_too_fast">操作频率太快，1秒后重试</string>
+
+    <string name="settings">设置</string>
+    <string name="general">常规</string>
+    <string name="settings_auto_set_wallpaper">自动设置壁纸</string>
+    <string name="on">开</string>
+    <string name="off">关</string>
+    <string name="settings_about">关于</string>
+    <string name="settings_about_app">关于此程序</string>
+    <string name="settings_about_notice">声明</string>
+    <string name="open_github">打开github</string>
+    <string name="open_blog">去博客反馈</string>
+    <string name="setting_about_app_msg">关于：\n此应用程序是由<a href="http://youthlin.com">Youth．霖</a>设计并制作的。您可以在<a href="https://github.com/YouthLin/BingWallpaper">Github</a>上获取本程序的最新源代码。也欢迎到我的博客留言反馈！</string>
+    <string name="setting_about_notice_msg">声明：\n所有网络传输的数据(json, jpg)都来自必应®，图片版权归原作者所有，或根据必应相关规定界定。本人概不负责任何与版权相关的纠纷，若有违反您的权益，请及时通知本人。此应用程序版权归本人所有。</string>
 </resources>

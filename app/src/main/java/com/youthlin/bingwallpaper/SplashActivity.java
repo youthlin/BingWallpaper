@@ -115,11 +115,11 @@ public class SplashActivity extends Activity {
 
     //region //检测网络是否连接
     //@link http://melove.net/lzan13/develops/android-develop/android-wifi-state-348.html
-    private boolean isNetworkConnected() {
+    public static boolean isNetworkConnected(Context context) {
         boolean result = false;
         //得到网络连接信息
         ConnectivityManager manager =
-                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (manager.getActiveNetworkInfo() != null) {
             result = manager.getActiveNetworkInfo().isAvailable();
         }
@@ -133,45 +133,14 @@ public class SplashActivity extends Activity {
             boolean mkdirs = path.mkdirs();
             Log.d(ConstValues.TAG, "创建目录成功吗:" + mkdirs + ";path=" + path.getAbsolutePath());
         }
-        if (ConstValues.dbPath == null) {
-            ConstValues.dbPath = getApplicationContext().getFilesDir().getAbsolutePath() + "/";
-        }
-        //打开数据库(不存在则创建)
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
-                ConstValues.dbPath + ConstValues.dbName, null);
-        Log.d(ConstValues.TAG, db.getPath());
-        //创建表(已有则不创建)
-        db.execSQL("create table if not exists " + ConstValues.tableName
-                + "(date primary key,urlbase,copyright,copyrightlink,filepath)");
-
         //判断网络
-        if (isNetworkConnected()) {
-            String jsonData = null;
-            //region //下载json数据
-            try {
-                URL url = new URL(ConstValues.jsonUrl);
-                InputStream is = url.openStream();
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                int length;
-                byte buff[] = new byte[4096];
-                while ((length = is.read(buff)) != -1) {
-                    baos.write(buff, 0, length);
-                }
-                jsonData = new String(baos.toByteArray());
-                is.close();
-                baos.close();
-            } catch (Exception e) {
-                Log.d(ConstValues.TAG, "获取json数据失败");
-            }//endregion
-
+        if (isNetworkConnected(this)) {
+            String jsonData = ImageEntry.getJson();
             //region //解析json数据
             if (jsonData != null) {
                 try {
                     JSONObject json = new JSONObject(jsonData);
                     JSONArray images = json.getJSONArray("images");
-                    Cursor c;
-                    boolean hasresult;
-                    String imageurl;
                     //region //遍历
                     for (int i = images.length() - 1; i >= 0; i--) {
                         a.publish(images.length() - i - 1, images.length());
@@ -181,50 +150,24 @@ public class SplashActivity extends Activity {
                                 copyright = json.getString("copyright"),
                                 copyrightlink = json.getString("copyrightlink");
                         File img = new File(ConstValues.savePath, date + ".jpg");
-
-                        //region //图片不存在则下载图片
+                        //图片不存在则下载图片
                         if (!img.exists()) {
                             ImageEntry.downImg(getApplication(), urlbase, img);
                         }
-                        //endregion
-
-                        //region //数据库中没有记录则插入
-                        c = db.rawQuery("SELECT * FROM " + ConstValues.tableName + " WHERE date = ?",
-                                new String[]{date});
-                        hasresult = false;
-                        while (c.moveToNext()) {
-                            if (c.getString(c.getColumnIndex("date")) != null
-                                    && c.getString(c.getColumnIndex("filepath")) != null) {
-                                hasresult = true;
-                            }
-                        }
-                        c.close();
-                        if (!hasresult) {
-                            //插入记录到数据库
-                            db.execSQL("INSERT INTO " + ConstValues.tableName
-                                            + "(date,urlbase,copyright,copyrightlink,filepath) "
-                                            + " VALUES(?,?,?,?,?)",
-                                    new Object[]{date, urlbase, copyright,
-                                            copyrightlink, img.getAbsolutePath()}
-                            );
-                            Log.d(ConstValues.TAG, "已插入记录" + date);
-                        }//endregion
-
+                        //数据库中没有记录则插入
+                        ImageEntry.insertIfNotExists(getApplicationContext(),
+                                new ImageEntry(date, urlbase, copyright, copyrightlink,
+                                        img.getAbsolutePath()));
                     }//endregion 遍历
-                    //ImageEntry.updateMediaDir(getApplicationContext(), ConstValues.savePath);
                 } catch (JSONException e) {
                     e.printStackTrace();
                     Log.d(ConstValues.TAG, "解析json出错");
-                    db.close();
                     return ConstValues.FAILURE;
                 }
-                db.close();
                 return ConstValues.SUCCESS;
             }//endregion
-            db.close();
             return ConstValues.FAILURE;
         }
-        db.close();
         return ConstValues.OFFLINE;
     }
 }

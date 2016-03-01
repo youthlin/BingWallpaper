@@ -2,8 +2,6 @@ package com.youthlin.bingwallpaper;
 
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.ThumbnailUtils;
@@ -26,11 +24,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import java.io.File;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private GridView mGridView;
@@ -102,6 +96,8 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_settings:
+                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                overridePendingTransition(R.anim.right_in, R.anim.right_out);
                 break;
             default:
                 return super.onOptionsItemSelected(item);
@@ -109,7 +105,6 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
     //endregion
-
 
     private void init() {
         //region GridView异步加载本地图片缩略图

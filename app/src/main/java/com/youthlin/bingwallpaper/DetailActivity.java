@@ -312,6 +312,8 @@ public class DetailActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_settings:
+                startActivity(new Intent(DetailActivity.this, SettingsActivity.class));
+                overridePendingTransition(R.anim.right_in, R.anim.right_out);
                 break;
             default:
                 return super.onOptionsItemSelected(item);

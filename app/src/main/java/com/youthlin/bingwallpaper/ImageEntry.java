@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.util.Log;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -43,21 +44,94 @@ public class ImageEntry {
         mbitmap = b;
     }
 
+
+    public static String getJson() {
+        String jsonData = null;
+        try {
+            URL url = new URL(ConstValues.jsonUrl);
+            InputStream is = url.openStream();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            int length;
+            byte buff[] = new byte[4096];
+            while ((length = is.read(buff)) != -1) {
+                baos.write(buff, 0, length);
+            }
+            jsonData = new String(baos.toByteArray());
+            is.close();
+            baos.close();
+        } catch (Exception e) {
+            Log.d(ConstValues.TAG, "获取json数据失败");
+        }
+        return jsonData;
+    }
+
+    public static boolean downImg(Context context, String urlbase, File img) {
+        try {
+            URL url = new URL("http://www.bing.com/" + urlbase + "_1080x1920.jpg");
+            InputStream is = url.openStream();
+            OutputStream os = new FileOutputStream(img);
+            byte[] buf = new byte[4096];
+            int hasread;
+            while ((hasread = is.read(buf)) > 0) {
+                os.write(buf, 0, hasread);
+            }
+            ImageEntry.updateMediaFile(context, img.getAbsolutePath());
+            is.close();
+            os.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+        Log.d(ConstValues.TAG, img.getPath() + "已下载");
+        return true;
+    }
+
+    public static SQLiteDatabase openOrCreateDatabase(Context context) {
+        if (ConstValues.dbPath == null) {
+            ConstValues.dbPath = context.getFilesDir().getAbsolutePath() + "/";
+        }
+        //打开数据库(不存在则创建)
+        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+                ConstValues.dbPath + ConstValues.dbName, null);
+        //创建表(已有则不创建)
+        db.execSQL("create table if not exists " + ConstValues.tableName
+                + "(date primary key,urlbase,copyright,copyrightlink,filepath)");
+        return db;
+    }
+
+    public static void insertIfNotExists(Context context, ImageEntry entry) {
+        SQLiteDatabase db = ImageEntry.openOrCreateDatabase(context);
+        Cursor c;
+        c = db.rawQuery("SELECT * FROM " + ConstValues.tableName + " WHERE date = ?",
+                new String[]{entry.mDate});
+        boolean hasResult = false;
+        while (c.moveToNext()) {
+            if (c.getString(c.getColumnIndex("date")) != null
+                    && c.getString(c.getColumnIndex("filepath")) != null) {
+                hasResult = true;
+            }
+        }
+        c.close();
+        if (!hasResult) {
+            //插入记录到数据库
+            db.execSQL("INSERT INTO " + ConstValues.tableName
+                            + "(date,urlbase,copyright,copyrightlink,filepath) "
+                            + " VALUES(?,?,?,?,?)",
+                    new Object[]{entry.mDate, entry.mUrlBase, entry.mCopyright,
+                            entry.mLink, entry.mFilePath}
+            );
+            Log.d(ConstValues.TAG, "已插入记录" + entry.mDate);
+        }
+        db.close();
+    }
+
     public static ArrayList<ImageEntry> getList(Context context) {
         File path = new File(ConstValues.savePath);
         if (!path.exists()) {
             boolean mkdirs = path.mkdirs();
             Log.d(ConstValues.TAG, "创建目录成功吗：" + mkdirs);
         }
-        if (ConstValues.dbPath == null) {
-            ConstValues.dbPath = context.getFilesDir().getAbsolutePath() + "/";
-        }
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
-                ConstValues.dbPath + ConstValues.dbName, null);
-        //创建表(已有则不创建)
-        db.execSQL("create table if not exists " + ConstValues.tableName
-                + "(date primary key,urlbase,copyright,copyrightlink,filepath)");
-
+        SQLiteDatabase db = openOrCreateDatabase(context);
         Cursor c;
         c = db.rawQuery("SELECT * FROM " + ConstValues.tableName + " ORDER BY date DESC",
                 new String[]{});
@@ -85,27 +159,6 @@ public class ImageEntry {
         c.close();
         db.close();
         return list;
-    }
-
-    public static boolean downImg(Context context, String urlbase, File img) {
-        try {
-            URL url = new URL("http://www.bing.com/" + urlbase + "_1080x1920.jpg");
-            InputStream is = url.openStream();
-            OutputStream os = new FileOutputStream(img);
-            byte[] buf = new byte[4096];
-            int hasread;
-            while ((hasread = is.read(buf)) > 0) {
-                os.write(buf, 0, hasread);
-            }
-            ImageEntry.updateMediaFile(context, img.getAbsolutePath());
-            is.close();
-            os.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        Log.d(ConstValues.TAG, img.getPath() + "已下载");
-        return true;
     }
 
     //通知媒体库更新文件
