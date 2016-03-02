@@ -3,11 +3,14 @@ package com.youthlin.bingwallpaper;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.Preference;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -106,6 +109,12 @@ public class SplashActivity extends Activity {
                     Log.d(ConstValues.TAG, "正常启动");
                     break;
             }
+            //region检查是否开启了自动设置壁纸
+            SharedPreferences shp = PreferenceManager.getDefaultSharedPreferences(getApplication());
+            boolean autoSetWallpaper = shp.getBoolean(
+                    getResources().getString(R.string.key_auto_set_wallpaper), true);
+            SettingsActivity.autoSetWallpaper(getApplication(), autoSetWallpaper);
+            //endregion
             SplashActivity.this.startActivity(new Intent(SplashActivity.this,
                     MainActivity.class));
             finish();

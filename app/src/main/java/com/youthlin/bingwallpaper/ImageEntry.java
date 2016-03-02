@@ -86,12 +86,16 @@ public class ImageEntry {
         return true;
     }
 
+    private static SQLiteDatabase db = null;
+
     public static SQLiteDatabase openOrCreateDatabase(Context context) {
+        if (db != null && db.isOpen()) return db;
+
         if (ConstValues.dbPath == null) {
             ConstValues.dbPath = context.getFilesDir().getAbsolutePath() + "/";
         }
         //打开数据库(不存在则创建)
-        SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(
+        db = SQLiteDatabase.openOrCreateDatabase(
                 ConstValues.dbPath + ConstValues.dbName, null);
         //创建表(已有则不创建)
         db.execSQL("create table if not exists " + ConstValues.tableName

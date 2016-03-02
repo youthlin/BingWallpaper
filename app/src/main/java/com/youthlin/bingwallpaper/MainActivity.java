@@ -135,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
             Bitmap bitmap, newbitmap;
             DisplayMetrics dm = getResources().getDisplayMetrics();
             int width = dm.widthPixels / numColumns;
+            int height = dm.widthPixels / numColumns;
             for (int i = 0; i < adapter.getCount(); i++) {
                 entry = (ImageEntry) adapter.getItem(i);
                 path = entry.mFilePath;
@@ -145,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
                 BitmapFactory.Options options = new BitmapFactory.Options();
                 options.inSampleSize = 10;
                 bitmap = BitmapFactory.decodeFile(path, options);
-                newbitmap = ThumbnailUtils.extractThumbnail(bitmap, width, width);
+                newbitmap = ThumbnailUtils.extractThumbnail(bitmap, width, height);
                 if (bitmap != null && !bitmap.isRecycled())
                     bitmap.recycle();
                 entry.setBitmap(newbitmap);
@@ -163,6 +164,8 @@ public class MainActivity extends AppCompatActivity {
             adapter.notifyDataSetChanged();
         }
     }
+
+    private static Bitmap tempImg = null;
 
     private class MyGridViewAdapter extends BaseAdapter {
         private Context context;
@@ -197,13 +200,15 @@ public class MainActivity extends AppCompatActivity {
             TextView textView = (TextView) convertView.findViewById(R.id.gridViewItemText);
             Bitmap img = list.get(position).getBitmap();
             if (img == null) {
-                int width = getResources().getDisplayMetrics().widthPixels;
-                int[] colors = new int[width * width];
-                img = Bitmap.createBitmap(colors, width, width, Bitmap.Config.ALPHA_8);
+                if (tempImg == null) {
+                    int w = getResources().getDisplayMetrics().widthPixels;
+                    int[] colors = new int[w * w];
+                    tempImg = Bitmap.createBitmap(colors, w, w, Bitmap.Config.ALPHA_8);
+                }
+                img = tempImg;
             }
             imageView.setImageBitmap(img);
             textView.setText(list.get(position).mDate);
-            //registerForContextMenu(convertView);
             return convertView;
         }
     }

@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
@@ -75,9 +76,10 @@ public class SettingsActivity extends AppCompatActivity {
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.preference);
-            about = findPreference("aboutApp");
-            notice = findPreference("aboutNotice");
-            checkBox = (CheckBoxPreference) findPreference("autoSetWallpaper");
+            about = findPreference(getResources().getString(R.string.key_about_app));
+            notice = findPreference(getResources().getString(R.string.key_about_notice));
+            checkBox = (CheckBoxPreference)
+                    findPreference(getResources().getString(R.string.key_auto_set_wallpaper));
             about.setOnPreferenceClickListener(this);
             notice.setOnPreferenceClickListener(this);
             checkBox.setOnPreferenceChangeListener(this);
@@ -88,29 +90,7 @@ public class SettingsActivity extends AppCompatActivity {
         @Override
         public boolean onPreferenceChange(Preference preference, Object newValue) {
             if (preference == checkBox) {
-                Intent intent = new Intent(getActivity(), SetWallpaperIntentService.class);
-                intent.setAction(SetWallpaperIntentService.ACTION_SET_NEWEST_WALLPAPER);
-                PendingIntent pi = PendingIntent.getService(getActivity(), 0, intent, 0);
-                AlarmManager am = (AlarmManager) getActivity().getSystemService(Service.ALARM_SERVICE);
-                if (newValue.equals(true)) {
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()),
-                            sdf2 = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                    Calendar calendar = Calendar.getInstance();
-                    calendar.add(Calendar.DATE, 1);//日期加一天
-                    long start = System.currentTimeMillis();
-                    try {
-                        String t = sdf2.format(calendar.getTime());//明天的日期，不带时间//因为时间是当前时间所以舍弃
-                        Date tomorrow = sdf.parse(t + " 00:00:00");//明天的日期加上时间凌晨零点
-                        start = tomorrow.getTime();
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-                    long repeat = 86400000;//24 * 3600 * 1000
-                    am.setRepeating(AlarmManager.RTC_WAKEUP, start, repeat, pi);
-                } else {
-                    Log.d(ConstValues.TAG, "cancle");
-                    am.cancel(pi);
-                }
+                autoSetWallpaper(getActivity(), (Boolean) newValue);
             }
             return true;
         }
@@ -148,6 +128,36 @@ public class SettingsActivity extends AppCompatActivity {
                 return true;//endregion
             }
             return false;
+        }
+    }
+
+    public static void autoSetWallpaper(Context context, boolean autoSetWallpaper) {
+        Intent intent = new Intent(context, SetWallpaperIntentService.class);
+        intent.setAction(SetWallpaperIntentService.ACTION_SET_NEWEST_WALLPAPER);
+        PendingIntent pi = PendingIntent.getService(context,
+                0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager am = (AlarmManager)
+                context.getSystemService(Service.ALARM_SERVICE);
+        if (autoSetWallpaper) {
+            SimpleDateFormat
+                    sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()),
+                    sdf2 = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.DATE, 1);//日期加一天
+            long start = System.currentTimeMillis();
+            try {
+                String t = sdf2.format(calendar.getTime());//明天的日期,舍弃时间//因为时间是当前
+                Date tomorrow = sdf.parse(t + " 00:00:00");//明天的日期加上时间凌晨零点
+                start = tomorrow.getTime();
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            long repeat = 86400000;//24 * 3600 * 1000
+            Log.d(ConstValues.TAG, "设置了定时服务");
+            am.setRepeating(AlarmManager.RTC_WAKEUP, start, repeat, pi);
+        } else {
+            Log.d(ConstValues.TAG, "取消了定时服务");
+            am.cancel(pi);
         }
     }
 }
