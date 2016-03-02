@@ -29,5 +29,5 @@
     <string name="open_github">Goto Github</string>
     <string name="open_blog">Goto Blog</string>
     <string name="setting_about_app_msg">About:\nThis application is design and created by <a href="http://youthlin.com">Youth．霖</a>.  You can get the source code at <a href="https://github.com/YouthLin/BingWallpaper">Github</a>, and if you have any suggestions please contact me at my blog.</string>
-    <string name="setting_about_notice_msg">Notice:\nAll of the data(json or jpg) is from Bing®.  The image copyright is owned by the original author or Bing™.  And this application is copyrighted by my own.  (The Chinese version shall prevail)</string>
+    <string name="setting_about_notice_msg">Notice:\nAll of the data(json or jpg) is from Bing™.  The image copyright is owned by the original author or Bing™.  And this application is copyrighted by my own.  (The Chinese version shall prevail)</string>
 </resources>
