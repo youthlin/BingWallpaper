@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">必应每日壁纸</string>
+    <string name="app_name">必应™每日壁纸</string>
     <string name="percent0">0%</string>
     <string name="percent">%1$d%%</string>
     <string name="percent_detail">%1$d/%2$d</string>
@@ -30,5 +30,5 @@
     <string name="open_github">打开github</string>
     <string name="open_blog">去博客反馈</string>
     <string name="setting_about_app_msg">关于：\n此应用程序是由<a href="http://youthlin.com">Youth．霖</a>设计并制作的。您可以在<a href="https://github.com/YouthLin/BingWallpaper">Github</a>上获取本程序的最新源代码。也欢迎到我的博客留言反馈！</string>
-    <string name="setting_about_notice_msg">声明：\n所有网络传输的数据(json, jpg)都来自必应®，图片版权归原作者所有，或根据必应相关规定界定。本人概不负责任何与版权相关的纠纷，若有违反您的权益，请及时通知本人。此应用程序版权归本人所有。</string>
+    <string name="setting_about_notice_msg">声明：\n所有网络传输的数据(json, jpg)都来自必应™，图片版权归原作者所有，或根据必应相关规定界定。本人概不负责任何与版权相关的纠纷，若有违反您的权益，请及时通知本人。此应用程序版权归本人所有。</string>
 </resources>
