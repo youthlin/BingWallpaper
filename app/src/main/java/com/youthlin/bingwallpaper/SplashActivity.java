@@ -110,9 +110,10 @@ public class SplashActivity extends Activity {
                     break;
             }
             //region检查是否开启了自动设置壁纸
+            //求大神解答关于PreferenceActivity数据读取问题！ [问题点数：40分，结帖人cndnis]
+            //http://bbs.csdn.net/topics/390242793
             SharedPreferences shp = PreferenceManager.getDefaultSharedPreferences(getApplication());
-            boolean autoSetWallpaper = shp.getBoolean(
-                    getResources().getString(R.string.key_auto_set_wallpaper), true);
+            boolean autoSetWallpaper = shp.getBoolean(ConstValues.key_auto_set_wallpaper, true);
             SettingsActivity.autoSetWallpaper(getApplication(), autoSetWallpaper);
             //endregion
             SplashActivity.this.startActivity(new Intent(SplashActivity.this,

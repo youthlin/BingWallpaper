@@ -11,16 +11,20 @@ android {
         versionCode 2
         versionName "2.0.0"
     }
+
     buildTypes {
         release {
-            minifyEnabled true
+            // AndroidStudio 混淆打包 http://www.cnblogs.com/permanent2012moira/p/5126276.html
+            minifyEnabled true  //混淆
+            zipAlignEnabled true    //Zipalign优化
+            shrinkResources true    //移除无用的resource文件
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.2.0'
     compile 'com.android.support:design:23.2.0'

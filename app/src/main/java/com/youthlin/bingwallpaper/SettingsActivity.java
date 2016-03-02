@@ -76,10 +76,9 @@ public class SettingsActivity extends AppCompatActivity {
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.preference);
-            about = findPreference(getResources().getString(R.string.key_about_app));
-            notice = findPreference(getResources().getString(R.string.key_about_notice));
-            checkBox = (CheckBoxPreference)
-                    findPreference(getResources().getString(R.string.key_auto_set_wallpaper));
+            about = findPreference(ConstValues.key_about_app);
+            notice = findPreference(ConstValues.key_about_notice);
+            checkBox = (CheckBoxPreference) findPreference(ConstValues.key_auto_set_wallpaper);
             about.setOnPreferenceClickListener(this);
             notice.setOnPreferenceClickListener(this);
             checkBox.setOnPreferenceChangeListener(this);

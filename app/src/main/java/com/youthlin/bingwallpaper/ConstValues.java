@@ -29,10 +29,13 @@ public class ConstValues {
     public static final int OFFLINE = 2; // 如果支持离线阅读，进入离线模式
     public static final int SHOW_TIME_MIN = 800;// 最小显示时间(毫秒)
 
-    public static final int SETTING_WALLPAPER = 0x0;
-    public static final int SET_WALLPAPER_SUCCESS = 0x1;
-    public static final int IO_EXCEPTION = 0x2;
-    public static final int FILE_NOT_FOUND = 0x3;
-    public static final int TOO_FAST = 0x4;
+    public static final int SETTING_WALLPAPER = 3;
+    public static final int SET_WALLPAPER_SUCCESS = 4;
+    public static final int IO_EXCEPTION = 5;
+    public static final int FILE_NOT_FOUND = 6;
+    public static final int TOO_FAST = 7;
 
+    public static final String key_auto_set_wallpaper = "autoSetWallpaper";
+    public static final String key_about_app = "aboutApp";
+    public static final String key_about_notice = "aboutNotice";
 }
