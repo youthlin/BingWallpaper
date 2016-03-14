@@ -12,7 +12,7 @@
 
     <string name="title_activity_detail">详情页</string>
     <string name="set_as_wallpaper">设为壁纸</string>
-    <string name="description">%1$s (%2$d/%3$d)\n%4$s</string>
+    <string name="description">%1$s (%2$d/%3$d)\n%4$s\n%5$s</string>
     <string name="setting_wallpaper">正在设置壁纸</string>
     <string name="set_wallpaper_succ">设置壁纸成功</string>
     <string name="set_wallpaper_file_not_found">找不到文件。请尝试重启程序</string>

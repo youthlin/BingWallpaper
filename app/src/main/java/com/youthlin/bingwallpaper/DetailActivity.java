@@ -182,9 +182,15 @@ public class DetailActivity extends AppCompatActivity {
         animation.setFillAfter(true);
         description.startAnimation(animation);
         try {
+            String c = list.get(current).mCopyright;
+            String[] cs = c.split("\\(");
+            cs[0] = cs[0].trim();
+            cs[1] = cs[1].trim();
+            cs[1] = cs[1].substring(0, cs[1].length() - 1);
+            Log.d(ConstValues.TAG, cs[0] + cs[1]);
             description.setText(String.format(Locale.getDefault(),
                     getResources().getString(R.string.description),
-                    list.get(current).mDate, current + 1, list.size(), list.get(current).mCopyright));
+                    list.get(current).mDate, current + 1, list.size(), cs[0], cs[1]));
             description.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {

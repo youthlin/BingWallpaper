@@ -11,7 +11,7 @@
 
     <string name="title_activity_detail">Detail</string>
     <string name="set_as_wallpaper">Set as wallpaper</string>
-    <string name="description">%1$s (%2$d/%3$d)\n%4$s</string>
+    <string name="description">%1$s (%2$d/%3$d)\n%4$s\n%5$s</string>
     <string name="setting_wallpaper">Setting wallpaper</string>
     <string name="set_wallpaper_succ">Wallpaper has been set</string>
     <string name="set_wallpaper_file_not_found">File not found.Try to restart app.</string>
