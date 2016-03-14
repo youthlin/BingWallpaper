@@ -38,4 +38,5 @@ public class ConstValues {
     public static final String key_auto_set_wallpaper = "autoSetWallpaper";
     public static final String key_about_app = "aboutApp";
     public static final String key_about_notice = "aboutNotice";
+    public static final String key_check_update = "check";
 }

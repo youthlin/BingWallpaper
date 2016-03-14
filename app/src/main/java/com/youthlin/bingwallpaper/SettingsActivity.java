@@ -70,7 +70,7 @@ public class SettingsActivity extends AppCompatActivity {
             implements Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener {
 
         CheckBoxPreference checkBox;
-        Preference about, notice;
+        Preference about, notice, update;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -82,6 +82,9 @@ public class SettingsActivity extends AppCompatActivity {
             about.setOnPreferenceClickListener(this);
             notice.setOnPreferenceClickListener(this);
             checkBox.setOnPreferenceChangeListener(this);
+
+            update = findPreference(ConstValues.key_check_update);
+            update.setOnPreferenceClickListener(this);
         }
 
         //Android中Preference的使用以及监听事件分析
@@ -123,6 +126,26 @@ public class SettingsActivity extends AppCompatActivity {
                         .setIcon(R.mipmap.ic_launcher)
                         .setTitle(R.string.settings_about_notice)
                         .setMessage(R.string.setting_about_notice_msg)
+                        .show();
+                return true;//endregion
+            } else if (preference == update) {//region
+                new AlertDialog.Builder(getActivity())
+                        .setIcon(R.mipmap.ic_launcher)
+                        .setTitle(R.string.settings_update_check)
+                        .setMessage(R.string.update_msg)
+                        .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                startActivity(new Intent(Intent.ACTION_VIEW,
+                                        Uri.parse("http://a.app.qq.com/o/simple.jsp?pkgname=com.youthlin.bingwallpaper")));
+                            }
+                        })
+                        .setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
                         .show();
                 return true;//endregion
             }

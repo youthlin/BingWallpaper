@@ -14,4 +14,10 @@
             android:key="aboutNotice"
             android:title="@string/settings_about_notice" />
     </PreferenceCategory>
+    <PreferenceCategory android:title="@string/settings_version">
+        <Preference
+            android:key="check"
+            android:summary="@string/cur_version"
+            android:title="@string/settings_update_check" />
+    </PreferenceCategory>
 </PreferenceScreen>
