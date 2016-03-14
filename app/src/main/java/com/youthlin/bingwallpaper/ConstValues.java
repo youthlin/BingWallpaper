@@ -21,7 +21,8 @@ public class ConstValues {
     public static String dbPath = null;
     public static final String dbName = "img.db";
     public static final String tableName = "ImageInfo";
-    public static final String jsonUrl = "http://cn.bing.com/HPImageArchive.aspx?format=js&idx=15&n=15";
+    //public static final String jsonUrl = "http://cn.bing.com/HPImageArchive.aspx?format=js&idx=15&n=15";
+    public static final String jsonUrl = "http://cn.bing.com/HPImageArchive.aspx?format=js&n=8";
     public static final String TAG = "BingWallpaper";
 
     public static final int FAILURE = 0; // 失败
