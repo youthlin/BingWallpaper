@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">每日壁纸</string>
+    <string name="app_name">必应每日壁纸</string>
     <string name="percent0">0%</string>
     <string name="percent">%1$d%%</string>
     <string name="percent_detail">%1$d/%2$d</string>
