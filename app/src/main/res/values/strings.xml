@@ -33,7 +33,7 @@
 
     <string name="settings_version">Version</string>
     <string name="settings_update_check">Check for update</string>
-    <string name="cur_version">2.0.2</string>
+    <string name="cur_version">2.1</string>
     <string name="update_msg">Open browser to check update?</string>
     <string name="ok">OK</string>
     <string name="no">Cancle</string>
