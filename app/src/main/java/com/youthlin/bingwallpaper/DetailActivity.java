@@ -183,14 +183,24 @@ public class DetailActivity extends AppCompatActivity {
         description.startAnimation(animation);
         try {
             String c = list.get(current).mCopyright;
-            String[] cs = c.split("\\(");
-            cs[0] = cs[0].trim();
-            cs[1] = cs[1].trim();
-            cs[1] = cs[1].substring(0, cs[1].length() - 1);
-            Log.d(ConstValues.TAG, cs[0] + cs[1]);
-            description.setText(String.format(Locale.getDefault(),
-                    getResources().getString(R.string.description),
-                    list.get(current).mDate, current + 1, list.size(), cs[0], cs[1]));
+            try {
+                String[] cs = c.split("\\(");
+                if (cs.length < 2) {
+                    cs = c.split("（");
+                    //有时会用中文的全角括号"【今日清明】云栖凉亭（© Andy Brandl/Getty Images）"
+                }
+                cs[0] = cs[0].trim();
+                cs[1] = cs[1].trim();
+                cs[1] = cs[1].substring(0, cs[1].length() - 1);
+                Log.d(ConstValues.TAG, cs[0] + cs[1]);
+                description.setText(String.format(Locale.getDefault(),
+                        getResources().getString(R.string.description),
+                        list.get(current).mDate, current + 1, list.size(), cs[0], cs[1]));
+            } catch (IndexOutOfBoundsException e) {
+                description.setText(String.format(Locale.getDefault(),
+                        getResources().getString(R.string.description),
+                        list.get(current).mDate, current + 1, list.size(), c, ""));
+            }
             description.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
