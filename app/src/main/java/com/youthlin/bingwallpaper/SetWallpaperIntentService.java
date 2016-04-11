@@ -7,10 +7,12 @@ import android.app.Service;
 import android.app.WallpaperManager;
 import android.content.Intent;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -53,8 +55,11 @@ public class SetWallpaperIntentService extends IntentService {
     }
 
     private void handleActionSetNewestWallpaper(String param) {
+//        SharedPreferences shp = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+//        boolean autoSet = shp.getBoolean(ConstValues.key_auto_set_wallpaper, false);
+//        SettingsActivity.autoSetWallpaper(getApplicationContext(), autoSet);
         if (param == null) param = "null";
-        Log.d(ConstValues.TAG, "调用了设置壁纸服务" + param);
+        Log.d(ConstValues.TAG, "调用了设置壁纸服务,参数=" + param);
         //region 如有网络则下载最新图片
         if (SplashActivity.isNetworkConnected(this)) {
             String jsonData = ImageEntry.getJson();
@@ -121,12 +126,13 @@ public class SetWallpaperIntentService extends IntentService {
         intent.setAction(SetWallpaperIntentService.ACTION_SET_NEWEST_WALLPAPER);
         intent.putExtra(EXTRA_PARAM1, EXTRA_PARAM1);
         PendingIntent pi = PendingIntent.getService(context,
-                0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                1, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager am = (AlarmManager)
                 context.getSystemService(Service.ALARM_SERVICE);
         if (flag) {
-            am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + ms, 0, pi);
-            Log.d(ConstValues.TAG, "网络不可用" + ms / 60000 + "分钟(" + ms + "ms)后重试");
+            am.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + ms, pi);
+//            am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + ms, 0, pi);
+            Log.d(ConstValues.TAG, "网络不可用," + ms / 60000 + "分钟(" + ms + "ms)后重试");
         } else
             am.cancel(pi);
     }

@@ -6,32 +6,37 @@ import android.app.AlertDialog;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.preference.CheckBoxPreference;
-import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
-import android.preference.SwitchPreference;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.widget.TimePicker;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.StringTokenizer;
 
 //http://drakeet.me/material-design-settings-activity
 public class SettingsActivity extends AppCompatActivity {
     private SettingsFragment mSettingsFragment;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,7 +75,10 @@ public class SettingsActivity extends AppCompatActivity {
             implements Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener {
 
         CheckBoxPreference checkBox;
-        Preference about, notice, update;
+        Preference about, notice, update, autoSetTime;
+
+        SharedPreferences shp;
+        boolean isOk = false;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -78,19 +86,36 @@ public class SettingsActivity extends AppCompatActivity {
             addPreferencesFromResource(R.xml.preference);
             about = findPreference(ConstValues.key_about_app);
             notice = findPreference(ConstValues.key_about_notice);
+            autoSetTime = findPreference(ConstValues.key_auto_set_wallpaper_time);
+
             checkBox = (CheckBoxPreference) findPreference(ConstValues.key_auto_set_wallpaper);
             about.setOnPreferenceClickListener(this);
             notice.setOnPreferenceClickListener(this);
+            autoSetTime.setOnPreferenceClickListener(this);
+
             checkBox.setOnPreferenceChangeListener(this);
 
             update = findPreference(ConstValues.key_check_update);
             update.setOnPreferenceClickListener(this);
+
+            shp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
+            autoSetTime.setSummary(String.format(Locale.getDefault(),
+                    getResources().getString(R.string.time),
+                    shp.getInt(ConstValues.autoSetTime_H, 0),
+                    shp.getInt(ConstValues.autoSetTime_M, 0)
+            ));
+            boolean autoSet = shp.getBoolean(ConstValues.key_auto_set_wallpaper, false);
+            autoSetTime.setEnabled(autoSet);
+
+            update.setSummary(getVersion(getActivity()));
         }
 
         //Android中Preference的使用以及监听事件分析
         //http://blog.csdn.net/qinjuning/article/details/6710003/
         @Override
         public boolean onPreferenceChange(Preference preference, Object newValue) {
+            autoSetTime.setEnabled((Boolean) newValue);
             if (preference == checkBox) {
                 autoSetWallpaper(getActivity(), (Boolean) newValue);
             }
@@ -148,6 +173,55 @@ public class SettingsActivity extends AppCompatActivity {
                         })
                         .show();
                 return true;//endregion
+            } else if (preference == autoSetTime) {//region
+
+                isOk = false;//点击空白或取消都不保存
+                int h = shp.getInt(ConstValues.autoSetTime_H, 0),
+                        m = shp.getInt(ConstValues.autoSetTime_M, 0);
+                final SharedPreferences.Editor editor = shp.edit();
+                TimePickerDialog dialog = new TimePickerDialog(getActivity(),
+                        new TimePickerDialog.OnTimeSetListener() {
+                            @Override
+                            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                                Log.d(ConstValues.TAG, hourOfDay + " " + minute);
+                                if (isOk) {
+                                    editor.putInt(ConstValues.autoSetTime_H, hourOfDay);
+                                    editor.putInt(ConstValues.autoSetTime_M, minute);
+                                    editor.apply();
+                                    autoSetTime.setSummary(String.format(Locale.getDefault(),
+                                            getResources().getString(R.string.time),
+                                            shp.getInt(ConstValues.autoSetTime_H, 0),
+                                            shp.getInt(ConstValues.autoSetTime_M, 0)
+                                    ));
+                                    autoSetWallpaper(getActivity(), false);
+                                    autoSetWallpaper(getActivity(), true);
+                                    Log.d(ConstValues.TAG, "saved");
+                                } else Log.d(ConstValues.TAG, "canceled");
+                            }
+                        }, h, m, true);
+                dialog.setIcon(R.mipmap.ic_launcher);
+                dialog.setTitle(R.string.settings_auto_set_wallpaper_time);
+                dialog.setButton(DialogInterface.BUTTON_NEGATIVE,
+                        getResources().getText(R.string.no),
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Log.d(ConstValues.TAG, "cancle");
+                                isOk = false;
+                            }
+                        });
+                dialog.setButton(DialogInterface.BUTTON_POSITIVE,
+                        getResources().getText(R.string.ok),
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                Log.d(ConstValues.TAG, "ok");
+                                isOk = true;
+                            }
+                        });
+
+                dialog.show();
+                //endregion
             }
             return false;
         }
@@ -160,6 +234,9 @@ public class SettingsActivity extends AppCompatActivity {
                 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager am = (AlarmManager)
                 context.getSystemService(Service.ALARM_SERVICE);
+        SharedPreferences shp = PreferenceManager.getDefaultSharedPreferences(context);
+        int h = shp.getInt(ConstValues.autoSetTime_H, 0),
+                m = shp.getInt(ConstValues.autoSetTime_M, 0);//上次保存的值
         if (autoSetWallpaper) {
             SimpleDateFormat
                     sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()),
@@ -167,19 +244,35 @@ public class SettingsActivity extends AppCompatActivity {
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.DATE, 1);//日期加一天
             long start = System.currentTimeMillis();
+            Date tomorrow = new Date();
             try {
                 String t = sdf2.format(calendar.getTime());//明天的日期,舍弃时间//因为时间是当前
-                Date tomorrow = sdf.parse(t + " 00:00:00");//明天的日期加上时间凌晨零点
+                //明天的日期加上设置的时间
+                tomorrow = sdf.parse(t +
+                        String.format(Locale.getDefault(), " %02d:%02d:00", h, m));
                 start = tomorrow.getTime();
             } catch (ParseException e) {
                 e.printStackTrace();
             }
             long repeat = 86400000;//24 * 3600 * 1000
-            Log.d(ConstValues.TAG, "设置了定时服务");
+            Log.d(ConstValues.TAG, "设置了定时服务" + tomorrow);
             am.setRepeating(AlarmManager.RTC_WAKEUP, start, repeat, pi);
         } else {
             Log.d(ConstValues.TAG, "取消了定时服务");
             am.cancel(pi);
         }
+    }
+
+    public static String getVersion(Context context) {
+        String version = "";
+        PackageManager pm = context.getPackageManager();
+        try {
+            PackageInfo pi = pm.getPackageInfo(context.getPackageName(), 0);
+            version = pi.versionName;
+            if (version == null || version.length() == 0) version = "";
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return version;
     }
 }

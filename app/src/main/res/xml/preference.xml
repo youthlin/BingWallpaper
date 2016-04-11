@@ -5,6 +5,9 @@
             android:defaultValue="true"
             android:key="autoSetWallpaper"
             android:title="@string/settings_auto_set_wallpaper" />
+        <Preference
+            android:key="autoSetTime"
+            android:title="@string/settings_auto_set_wallpaper_time" />
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/settings_about">
         <Preference
@@ -17,7 +20,6 @@
     <PreferenceCategory android:title="@string/settings_version">
         <Preference
             android:key="check"
-            android:summary="@string/cur_version"
             android:title="@string/settings_update_check" />
     </PreferenceCategory>
 </PreferenceScreen>

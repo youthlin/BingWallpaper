@@ -8,8 +8,8 @@ android {
         applicationId "com.youthlin.bingwallpaper"
         minSdkVersion 14
         targetSdkVersion 23
-        versionCode 5
-        versionName "2.1"
+        versionCode 6
+        versionName "2.1.1"
     }
 
     buildTypes {

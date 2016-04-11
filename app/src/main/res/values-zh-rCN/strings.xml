@@ -22,6 +22,8 @@
     <string name="settings">设置</string>
     <string name="general">常规</string>
     <string name="settings_auto_set_wallpaper">自动设置壁纸</string>
+    <string name="settings_auto_set_wallpaper_time">选择自动设置壁纸的时间</string>
+    <string name="time">%1$02d:%2$02d</string>
     <string name="on">开</string>
     <string name="off">关</string>
     <string name="settings_about">关于</string>
@@ -34,7 +36,6 @@
 
     <string name="settings_version">版本</string>
     <string name="settings_update_check">检查更新</string>
-    <string name="cur_version">2.1</string>
     <string name="update_msg">打开网页版应用宝检查更新吗？</string>
     <string name="ok">好的</string>
     <string name="no">取消</string>

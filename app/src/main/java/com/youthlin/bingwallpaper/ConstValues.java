@@ -40,6 +40,10 @@ public class ConstValues {
     public static final String key_about_app = "aboutApp";
     public static final String key_about_notice = "aboutNotice";
     public static final String key_check_update = "check";
+    public static final String key_auto_set_wallpaper_time = "autoSetTime";
+
+    public static final String autoSetTime_H = "autoSetTimeHour";
+    public static final String autoSetTime_M = "autoSetTimeMinute";
 
     public static final String action_boot = "android.intent.action.BOOT_COMPLETED";
 }
