@@ -37,7 +37,6 @@ import java.util.StringTokenizer;
 public class SettingsActivity extends AppCompatActivity {
     private SettingsFragment mSettingsFragment;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,15 +69,12 @@ public class SettingsActivity extends AppCompatActivity {
         fragmentManager.beginTransaction().replace(viewId, fragment).commit();
     }
 
-
     public static class SettingsFragment extends PreferenceFragment
             implements Preference.OnPreferenceClickListener, Preference.OnPreferenceChangeListener {
 
         CheckBoxPreference checkBox;
         Preference about, notice, update, autoSetTime;
-
         SharedPreferences shp;
-        boolean isOk = false;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
@@ -87,27 +83,23 @@ public class SettingsActivity extends AppCompatActivity {
             about = findPreference(ConstValues.key_about_app);
             notice = findPreference(ConstValues.key_about_notice);
             autoSetTime = findPreference(ConstValues.key_auto_set_wallpaper_time);
-
             checkBox = (CheckBoxPreference) findPreference(ConstValues.key_auto_set_wallpaper);
+            update = findPreference(ConstValues.key_check_update);
+            shp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+
             about.setOnPreferenceClickListener(this);
             notice.setOnPreferenceClickListener(this);
             autoSetTime.setOnPreferenceClickListener(this);
-
             checkBox.setOnPreferenceChangeListener(this);
-
-            update = findPreference(ConstValues.key_check_update);
             update.setOnPreferenceClickListener(this);
 
-            shp = PreferenceManager.getDefaultSharedPreferences(getActivity());
-
+            boolean autoSet = shp.getBoolean(ConstValues.key_auto_set_wallpaper, false);
             autoSetTime.setSummary(String.format(Locale.getDefault(),
                     getResources().getString(R.string.time),
                     shp.getInt(ConstValues.autoSetTime_H, 0),
                     shp.getInt(ConstValues.autoSetTime_M, 0)
             ));
-            boolean autoSet = shp.getBoolean(ConstValues.key_auto_set_wallpaper, false);
             autoSetTime.setEnabled(autoSet);
-
             update.setSummary(getVersion(getActivity()));
         }
 
@@ -123,7 +115,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         @Override
-        public boolean onPreferenceClick(Preference preference) {
+        public boolean onPreferenceClick(final Preference preference) {
             if (preference == about) {
                 //region 对话框
                 new AlertDialog.Builder(getActivity())
@@ -174,53 +166,52 @@ public class SettingsActivity extends AppCompatActivity {
                         .show();
                 return true;//endregion
             } else if (preference == autoSetTime) {//region
-
-                isOk = false;//点击空白或取消都不保存
+                //在三星设备上用TimePickerDialog，用了setButton设置确定键，就不会调用onTimeSet。
+                //http://stackoverflow.com/questions/23826373/
+                // timepickerdialog-ontimeset-never-called-on-samsung-devices-with-touchwiz
+                //因此使用AlertDialog包裹TimePicker实现确定于取消逻辑。
+                //http://stackoverflow.com/questions/15165328/
+                // timepickerdialog-ontimesetlistener-not-called
                 int h = shp.getInt(ConstValues.autoSetTime_H, 0),
                         m = shp.getInt(ConstValues.autoSetTime_M, 0);
+                final TimePicker picker = new TimePicker(getActivity());
+                picker.setIs24HourView(true);
+                picker.setCurrentHour(h);
+                picker.setCurrentMinute(m);
                 final SharedPreferences.Editor editor = shp.edit();
-                TimePickerDialog dialog = new TimePickerDialog(getActivity(),
-                        new TimePickerDialog.OnTimeSetListener() {
-                            @Override
-                            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-                                Log.d(ConstValues.TAG, hourOfDay + " " + minute);
-                                if (isOk) {
-                                    editor.putInt(ConstValues.autoSetTime_H, hourOfDay);
-                                    editor.putInt(ConstValues.autoSetTime_M, minute);
-                                    editor.apply();
-                                    autoSetTime.setSummary(String.format(Locale.getDefault(),
-                                            getResources().getString(R.string.time),
-                                            shp.getInt(ConstValues.autoSetTime_H, 0),
-                                            shp.getInt(ConstValues.autoSetTime_M, 0)
-                                    ));
-                                    autoSetWallpaper(getActivity(), false);
-                                    autoSetWallpaper(getActivity(), true);
-                                    Log.d(ConstValues.TAG, "saved");
-                                } else Log.d(ConstValues.TAG, "canceled");
-                            }
-                        }, h, m, true);
-                dialog.setIcon(R.mipmap.ic_launcher);
-                dialog.setTitle(R.string.settings_auto_set_wallpaper_time);
-                dialog.setButton(DialogInterface.BUTTON_NEGATIVE,
-                        getResources().getText(R.string.no),
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                Log.d(ConstValues.TAG, "cancle");
-                                isOk = false;
-                            }
-                        });
-                dialog.setButton(DialogInterface.BUTTON_POSITIVE,
-                        getResources().getText(R.string.ok),
-                        new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                Log.d(ConstValues.TAG, "ok");
-                                isOk = true;
-                            }
-                        });
-
-                dialog.show();
+                new AlertDialog.Builder(getActivity())
+                        .setIcon(R.mipmap.ic_launcher)
+                        .setTitle(R.string.settings_auto_set_wallpaper_time)
+                        .setView(picker)
+                        .setPositiveButton(android.R.string.ok,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        Log.d(ConstValues.TAG, picker.getCurrentHour() + ":"
+                                                + picker.getCurrentMinute());
+                                        editor.putInt(ConstValues.autoSetTime_H,
+                                                picker.getCurrentHour());
+                                        editor.putInt(ConstValues.autoSetTime_M,
+                                                picker.getCurrentMinute());
+                                        editor.apply();
+                                        autoSetTime.setSummary(String.format(Locale.getDefault(),
+                                                getResources().getString(R.string.time),
+                                                shp.getInt(ConstValues.autoSetTime_H, 0),
+                                                shp.getInt(ConstValues.autoSetTime_M, 0)
+                                        ));
+                                        autoSetWallpaper(getActivity(), false);
+                                        autoSetWallpaper(getActivity(), true);
+                                        Log.d(ConstValues.TAG, "saved");
+                                    }
+                                })
+                        .setNegativeButton(android.R.string.cancel,
+                                new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        Log.d(ConstValues.TAG, "Cancelled!");
+                                    }
+                                })
+                        .show();
                 //endregion
             }
             return false;
