@@ -2,7 +2,10 @@ package com.youthlin.bingwallpaper;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -52,6 +55,11 @@ public class SplashActivity extends Activity {
         mTextView2 = (TextView) findViewById(R.id.textView2);
     }
 
+    private void permissionGrated() {
+        Log.d(ConstValues.TAG, "权限OK");
+        new SplashAsyncTask().execute();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -59,15 +67,16 @@ public class SplashActivity extends Activity {
             String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
             if (ActivityCompat.checkSelfPermission(this, permissions[0])
                     != PackageManager.PERMISSION_GRANTED) {
+                Log.d(ConstValues.TAG, "打开请求权限弹窗");
                 ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST);
             }
-        }
-        new SplashAsyncTask().execute();
+        } else permissionGrated();
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
+        Log.d(ConstValues.TAG, "获取权限结果回调");
         if (requestCode == PERMISSION_REQUEST) {
             if (grantResults.length > 0) {
                 boolean storageSuccess = false;
@@ -83,9 +92,29 @@ public class SplashActivity extends Activity {
                 if (!storageSuccess) {
                     Toast.makeText(this, R.string.write_external_storage_tip,
                             Toast.LENGTH_LONG).show();
+                    new AlertDialog.Builder(this)
+                            .setIcon(R.mipmap.ic_launcher)
+                            .setTitle(R.string.write_external_storage_title)
+                            .setMessage(R.string.write_external_storage_tip)
+                            .setPositiveButton(R.string.write_external_storage_open_settings, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    Intent intent = new Intent("/");
+                                    ComponentName cm = new ComponentName("com.android.settings",
+                                            "com.android.settings.ApplicationSettings");
+                                    intent.setComponent(cm);
+                                    intent.setAction("android.intent.action.VIEW");
+                                    startActivityForResult(intent, 0);
+                                }
+                            })
+                            .show();
+                } else {
+                    permissionGrated();
+                    return;
                 }
             }
         }
+        finish();
     }
 
     private class SplashAsyncTask extends AsyncTask<Void, Integer, Integer> {
@@ -96,7 +125,6 @@ public class SplashActivity extends Activity {
         @Override
         protected Integer doInBackground(Void... params) {
             int result = init(this);
-
             long loadingTime = System.currentTimeMillis() - mStartTime;
             Log.d(ConstValues.TAG, "用时:" + loadingTime);
             if (loadingTime < ConstValues.SHOW_TIME_MIN) {

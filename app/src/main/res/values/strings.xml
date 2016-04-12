@@ -39,5 +39,8 @@
     <string name="ok">OK</string>
     <string name="no">Cancle</string>
 
-    <string name="write_external_storage_tip">Storage permission needed,or wallpaper wounld not shown</string>
+    <string name="write_external_storage_title">Storage permission needed</string>
+    <string name="write_external_storage_tip">Storage permission needed,or wallpaper would not shown.\nYou can granted storage permissions at Setting-App-Bing Wallpaper-permission.\nOpen Setting?</string>
+    <string name="write_external_storage_open_settings">Settings</string>
+    <string name="write_external_storage_exit">Exit</string>
 </resources>

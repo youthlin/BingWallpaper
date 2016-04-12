@@ -40,5 +40,8 @@
     <string name="ok">好的</string>
     <string name="no">取消</string>
 
-    <string name="write_external_storage_tip">需要存储权限，否则将不能保存壁纸！</string>
+    <string name="write_external_storage_title">需要存储权限</string>
+    <string name="write_external_storage_tip">需要存储权限，否则将不能保存壁纸！\n在设置-应用-必应每日壁纸-权限可设置权限。\n是否打开设置?</string>
+    <string name="write_external_storage_open_settings">设置</string>
+    <string name="write_external_storage_exit">退出</string>
 </resources>
