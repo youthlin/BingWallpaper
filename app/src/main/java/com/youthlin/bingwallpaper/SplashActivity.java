@@ -8,12 +8,15 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -53,24 +56,20 @@ public class SplashActivity extends Activity {
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         mTextView1 = (TextView) findViewById(R.id.textView);
         mTextView2 = (TextView) findViewById(R.id.textView2);
-    }
 
-    private void permissionGrated() {
-        Log.d(ConstValues.TAG, "权限OK");
-        new SplashAsyncTask().execute();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
         if (Build.VERSION.SDK_INT >= 23) {
             String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
             if (ActivityCompat.checkSelfPermission(this, permissions[0])
                     != PackageManager.PERMISSION_GRANTED) {
                 Log.d(ConstValues.TAG, "打开请求权限弹窗");
                 ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST);
-            }
+            } else permissionGrated();
         } else permissionGrated();
+    }
+
+    private void permissionGrated() {
+        Log.d(ConstValues.TAG, "权限OK");
+        new SplashAsyncTask().execute();
     }
 
     @Override
@@ -90,8 +89,6 @@ public class SplashActivity extends Activity {
                     }
                 }
                 if (!storageSuccess) {
-                    Toast.makeText(this, R.string.write_external_storage_tip,
-                            Toast.LENGTH_LONG).show();
                     new AlertDialog.Builder(this)
                             .setIcon(R.mipmap.ic_launcher)
                             .setTitle(R.string.write_external_storage_title)
@@ -99,22 +96,24 @@ public class SplashActivity extends Activity {
                             .setPositiveButton(R.string.write_external_storage_open_settings, new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
-                                    Intent intent = new Intent("/");
-                                    ComponentName cm = new ComponentName("com.android.settings",
-                                            "com.android.settings.ApplicationSettings");
-                                    intent.setComponent(cm);
-                                    intent.setAction("android.intent.action.VIEW");
-                                    startActivityForResult(intent, 0);
+                                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.parse("package:" + getApplication().getPackageName()));
+                                    startActivity(intent);
+                                    finish();
+                                }
+                            })
+                            .setNegativeButton(R.string.write_external_storage_exit, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    finish();
                                 }
                             })
                             .show();
                 } else {
                     permissionGrated();
-                    return;
                 }
             }
         }
-        finish();
     }
 
     private class SplashAsyncTask extends AsyncTask<Void, Integer, Integer> {
