@@ -39,4 +39,6 @@
     <string name="update_msg">打开网页版应用宝检查更新吗？</string>
     <string name="ok">好的</string>
     <string name="no">取消</string>
+
+    <string name="write_external_storage_tip">需要存储权限，否则将不能保存壁纸！</string>
 </resources>

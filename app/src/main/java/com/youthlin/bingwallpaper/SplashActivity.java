@@ -1,16 +1,18 @@
 package com.youthlin.bingwallpaper;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
-import android.preference.Preference;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -20,13 +22,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URL;
 
 /**
  * @link http://blog.csdn.net/lincyang/article/details/42673151
@@ -44,6 +40,7 @@ public class SplashActivity extends Activity {
     private long mStartTime;// 开始时间
     private ProgressBar mProgressBar;
     private TextView mTextView1, mTextView2;
+    private int PERMISSION_REQUEST = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,8 +50,42 @@ public class SplashActivity extends Activity {
         mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
         mTextView1 = (TextView) findViewById(R.id.textView);
         mTextView2 = (TextView) findViewById(R.id.textView2);
+    }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (Build.VERSION.SDK_INT >= 23) {
+            String[] permissions = new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE};
+            if (ActivityCompat.checkSelfPermission(this, permissions[0])
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST);
+            }
+        }
         new SplashAsyncTask().execute();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        if (requestCode == PERMISSION_REQUEST) {
+            if (grantResults.length > 0) {
+                boolean storageSuccess = false;
+                for (int i = 0; i < permissions.length; i++) {
+                    if (permissions[i].equals(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+                        if (grantResults.length > i) {
+                            if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                                storageSuccess = true;
+                            }
+                        }
+                    }
+                }
+                if (!storageSuccess) {
+                    Toast.makeText(this, R.string.write_external_storage_tip,
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+        }
     }
 
     private class SplashAsyncTask extends AsyncTask<Void, Integer, Integer> {

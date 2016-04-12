@@ -38,4 +38,6 @@
     <string name="update_msg">Open browser to check update?</string>
     <string name="ok">OK</string>
     <string name="no">Cancle</string>
+
+    <string name="write_external_storage_tip">Storage permission needed,or wallpaper wounld not shown</string>
 </resources>

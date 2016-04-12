@@ -41,35 +41,6 @@ public class MainActivity extends AppCompatActivity {
         //numColumns = mGridView.getNumColumns();//-1 ???
         numColumns = 3;
         init();
-        mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //Log.d(ConstValues.TAG, "点击=" + System.currentTimeMillis());
-                Intent i = new Intent(MainActivity.this, DetailActivity.class);
-                i.putExtra("current", position);
-                startActivity(i);
-                overridePendingTransition(R.anim.right_in, R.anim.right_out);
-                //Log.d(ConstValues.TAG, "跳转=" + System.currentTimeMillis());
-            }
-        });
-        mGridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long id) {
-                final PopupMenu popupMenu = new PopupMenu(getApplication(), view);
-                getMenuInflater().inflate(R.menu.popup_menu, popupMenu.getMenu());
-                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        new SetWallpaper(getApplication(), MainActivity.this,
-                                ((ImageEntry) adapter.getItem(position)).mFilePath).start();
-                        return true;
-                    }
-                });
-                popupMenu.show();
-                return true;
-            }
-        });
-        mGridView.setSelector(R.drawable.selector_gridview_item);
     }
 
     @Override
@@ -118,6 +89,35 @@ public class MainActivity extends AppCompatActivity {
         adapter = new MyGridViewAdapter(this, ImageEntry.getList(getApplication()));
         mGridView.setAdapter(adapter);
         new ImageLoadAsyncTask(adapter).execute();//endregion
+        mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                //Log.d(ConstValues.TAG, "点击=" + System.currentTimeMillis());
+                Intent i = new Intent(MainActivity.this, DetailActivity.class);
+                i.putExtra("current", position);
+                startActivity(i);
+                overridePendingTransition(R.anim.right_in, R.anim.right_out);
+                //Log.d(ConstValues.TAG, "跳转=" + System.currentTimeMillis());
+            }
+        });
+        mGridView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, final int position, long id) {
+                final PopupMenu popupMenu = new PopupMenu(getApplication(), view);
+                getMenuInflater().inflate(R.menu.popup_menu, popupMenu.getMenu());
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        new SetWallpaper(getApplication(), MainActivity.this,
+                                ((ImageEntry) adapter.getItem(position)).mFilePath).start();
+                        return true;
+                    }
+                });
+                popupMenu.show();
+                return true;
+            }
+        });
+        mGridView.setSelector(R.drawable.selector_gridview_item);
     }
 
     private class ImageLoadAsyncTask extends AsyncTask<Void, Integer, Void> {
