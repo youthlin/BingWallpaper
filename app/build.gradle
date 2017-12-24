@@ -1,19 +1,30 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
-    buildToolsVersion "26.0.2"
+    compileSdkVersion 27
+    buildToolsVersion "27.0.3"
     defaultConfig {
         applicationId "com.youthlin.bingwallpaper"
         minSdkVersion 14
-        targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
+        targetSdkVersion 27
+        versionCode 9
+        versionName "3.0.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
+        // Error:Failed to resolve: com.android.support:appcompat-v7:27
+        // https://stackoverflow.com/a/45397095
+        repositories {
+            maven {
+                url "https://maven.google.com"
+            }
+        }
         release {
-            minifyEnabled false
+            // minifyEnabled false
+            // AndroidStudio 混淆打包 http://www.cnblogs.com/permanent2012moira/p/5126276.html
+            minifyEnabled true      //混淆
+            zipAlignEnabled true    //Zipalign优化
+            shrinkResources true    //移除无用的resource文件
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -24,9 +35,9 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:26.+'
+    compile 'com.android.support:appcompat-v7:27.+'
     compile 'com.android.support.constraint:constraint-layout:1.0.2'
-    compile 'com.android.support:design:26.+'
+    compile 'com.android.support:design:27.+'
     testCompile 'junit:junit:4.12'
     compile 'com.tencent.bugly:crashreport:latest.release'
 
