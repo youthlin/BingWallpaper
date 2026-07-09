@@ -31,8 +31,12 @@
     <string name="setting_prefetch_wifi">Wi-Fi 环境自动下载大图</string>
     <string name="setting_prefetch_wifi_summary">打开应用时后台把最近的高清图缓存下来（配合“自动保存到图库”可自动归档）</string>
     <string name="setting_run_now">立即执行一次</string>
+    <string name="setting_faq">常见问题</string>
+    <string name="setting_faq_summary">后台自动更换壁纸排查</string>
     <string name="setting_about">关于</string>
     <string name="setting_about_summary">十年前的应用，2026 年翻新版</string>
+    <string name="faq_auto_change_title">无法自动更换壁纸？</string>
+    <string name="faq_auto_change_body">- 请检查是否开启完全后台运行；\n- 在最近任务列表中锁定本应用；\n- 尝试在应用详情中授予闹钟权限（如有）。</string>
     <string name="about_title">关于</string>
     <string name="about_body">必应每日壁纸自动更换助手。\n此应用程序由 Youth．霖 设计并制作，您可以在 GitHub 上获取本程序的最新源代码，也欢迎到我的博客留言反馈！\n所有网络传输的数据都来自必应，图片版权归原作者所有，本应用程序版权归本人所有。</string>
 

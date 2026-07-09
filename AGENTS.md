@@ -82,18 +82,19 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ## 权限
 
-当前声明 4 个权限，无运行时权限请求：
+当前声明 5 个权限，无运行时权限请求：
 - `INTERNET` — 网络访问
 - `SET_WALLPAPER` — 设置壁纸（无需运行时授权）
 - `POST_NOTIFICATIONS` — 通知渠道（Android 13+ 需在 Worker 内 `setForeground`，当前未实现）
 - `RECEIVE_BOOT_COMPLETED` — 开机后恢复每日闹钟；自动更换开启时补执行一次
+- `SCHEDULE_EXACT_ALARM` — 尽量按用户设置时间触发每日闹钟；不可用时回退到非精确闹钟
 
 ## 定时与后台调度逻辑
 
-- **每日定时**: `WorkScheduler.apply()` 使用 `AlarmManager.setAndAllowWhileIdle()` 排到下一次用户设定的 `hh:mm`
+- **每日定时**: `WorkScheduler.apply()` 优先使用 `AlarmManager.setExactAndAllowWhileIdle()` 排到下一次用户设定的 `hh:mm`；没有精确闹钟权限时回退到 `setAndAllowWhileIdle()`
 - **到点执行**: `DailyWallpaperReceiver` 调用 `WorkScheduler.runOnce()`，真正下载和设置由 `SetWallpaperWorker` 执行
 - **开机补偿**: `BootReceiver` 在 `BOOT_COMPLETED` 后读取设置；若自动更换开启，立即补执行一次，并恢复下一次每日闹钟
-- **网络约束**: `UNMETERED` 或 `CONNECTED`，由一次性 WorkManager 任务保证
+- **网络约束**: 设置壁纸的一次性 WorkManager 任务只要求 `CONNECTED`；Wi-Fi Only 在 `SetWallpaperWorker` 内用 `NetworkCapabilities.TRANSPORT_WIFI/ETHERNET` 判断，避免部分 ROM 将 Wi-Fi 标为 metered 后一直不运行
 - **失败重试**: `BackoffPolicy.EXPONENTIAL, 15min`，Worker 内 `runAttemptCount < 5` 限制
 - **Wi-Fi 预取**: `PrefetchUhdWorker` 受 `UNMETERED` 约束，遍历所有条目下载 UHD 变体，可选保存到图库
 
@@ -111,7 +112,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 ## 安全注意事项
 
-- 所有网络请求走 HTTPS（`https://cn.bing.com/`）
+- 所有网络请求走 HTTPS（`https://www.bing.com/`）
 - API 响应解析使用 `ignoreUnknownKeys = true`，避免新增字段崩溃
 - 图片存储使用应用私有目录，不暴露到外部存储
 - FileProvider 仅映射 `filesDir/wallpapers/` 目录

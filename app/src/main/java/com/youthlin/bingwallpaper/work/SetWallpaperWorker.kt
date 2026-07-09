@@ -1,6 +1,8 @@
 package com.youthlin.bingwallpaper.work
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -23,6 +25,11 @@ class SetWallpaperWorker(
         val settings = SettingsStore(applicationContext).current()
         val repo = WallpaperRepository(applicationContext)
         val date = inputData.getString(KEY_DATE)
+        val requireWifi = inputData.getBoolean(KEY_REQUIRE_WIFI, settings.onlyWifi)
+        if (requireWifi && !isWifiOrEthernetConnected()) {
+            Log.i(TAG, "Wi-Fi only is enabled, waiting for Wi-Fi or Ethernet")
+            return Result.retry()
+        }
         return try {
             val savedNew = if (date != null) {
                 // 模式 1：设置指定日期的壁纸
@@ -57,7 +64,17 @@ class SetWallpaperWorker(
     companion object {
         const val KEY_DATE = "date"
         const val KEY_SAVED_NEW = "saved_new"
+        const val KEY_REQUIRE_WIFI = "require_wifi"
         private const val TAG = "SetWallpaperWorker"
         private const val MAX_ATTEMPTS = 5 // 最多重试 5 次
+    }
+
+    private fun isWifiOrEthernetConnected(): Boolean {
+        val cm = applicationContext.getSystemService(ConnectivityManager::class.java) ?: return false
+        val network = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(network) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                        caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
     }
 }

@@ -62,6 +62,7 @@ fun SettingsScreen() {
     val settings by store.flow.collectAsState(initial = UserSettings())
     var showTargetDialog by remember { mutableStateOf(false) }
     var showMarketDialog by remember { mutableStateOf(false) }
+    var showFaq by remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
 
     // 设置变更时自动同步 WorkManager 调度
@@ -157,6 +158,12 @@ fun SettingsScreen() {
                 onChange = { scope.launch { store.setPrefetchOnWifi(it) } }
             )
             HorizontalDivider()
+            // 常见问题
+            ClickableRow(
+                title = stringResource(R.string.setting_faq),
+                summary = stringResource(R.string.setting_faq_summary)
+            ) { showFaq = true }
+            HorizontalDivider()
             // 关于
             ClickableRow(
                 title = stringResource(R.string.setting_about),
@@ -242,6 +249,20 @@ fun SettingsScreen() {
                     TextButton(onClick = { showMarketDialog = false }) {
                         Text(stringResource(android.R.string.cancel))
                     }
+                }
+            }
+        )
+    }
+
+    // 常见问题弹窗
+    if (showFaq) {
+        AlertDialog(
+            onDismissRequest = { showFaq = false },
+            title = { Text(stringResource(R.string.faq_auto_change_title)) },
+            text = { Text(stringResource(R.string.faq_auto_change_body)) },
+            confirmButton = {
+                TextButton(onClick = { showFaq = false }) {
+                    Text(stringResource(android.R.string.ok))
                 }
             }
         )

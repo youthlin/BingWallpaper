@@ -54,7 +54,11 @@ object WorkScheduler {
         }
 
         val triggerAt = nextTriggerAtMillis(settings.hour, settings.minute)
-        alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
+        if (canScheduleExactAlarms(alarm)) {
+            alarm.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
+        } else {
+            alarm.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pending)
+        }
     }
 
     /** Wi-Fi 下静默预下载所有已知壁纸的大图 */
@@ -76,13 +80,19 @@ object WorkScheduler {
      */
     fun runOnce(context: Context, requireUnmetered: Boolean = false, date: String? = null) {
         val constraints = Constraints.Builder()
-            .setRequiredNetworkType(if (requireUnmetered) NetworkType.UNMETERED else NetworkType.CONNECTED)
+            .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
         val builder = OneTimeWorkRequestBuilder<SetWallpaperWorker>()
             .setConstraints(constraints)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
+            .setInputData(workDataOf(SetWallpaperWorker.KEY_REQUIRE_WIFI to requireUnmetered))
         if (date != null) {
-            builder.setInputData(workDataOf(SetWallpaperWorker.KEY_DATE to date))
+            builder.setInputData(
+                workDataOf(
+                    SetWallpaperWorker.KEY_DATE to date,
+                    SetWallpaperWorker.KEY_REQUIRE_WIFI to requireUnmetered
+                )
+            )
         }
         val req = builder.build()
         WorkManager.getInstance(context)
@@ -118,5 +128,9 @@ object WorkScheduler {
             Intent(context, DailyWallpaperReceiver::class.java),
             flags
         )
+    }
+
+    private fun canScheduleExactAlarms(alarm: AlarmManager): Boolean {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarm.canScheduleExactAlarms()
     }
 }

@@ -64,7 +64,7 @@ Bing API (JSON)
 
 ## 核心功能
 
-- 拉取必应每日壁纸（近 8 天，`https://cn.bing.com/HPImageArchive.aspx`, UHD 分辨率）
+- 拉取必应每日壁纸（近 8 天，`https://www.bing.com/HPImageArchive.aspx`, UHD 分辨率）
 - Compose 网格浏览 / 详情大图（支持双指缩放）
 - 一键设为主屏 / 锁屏 / 双屏壁纸
 - 每日定时自动更换（AlarmManager 到点触发，WorkManager 执行下载/设置）
@@ -88,7 +88,7 @@ Bing API (JSON)
 | 存储 | 原生 SQLite + external storage | Room 2.6 + 应用私有目录（Scoped Storage 兼容） |
 | 偏好 | SharedPreferences | DataStore-Preferences |
 | 定时 | AlarmManager + IntentService + BootReceiver | AlarmManager + BroadcastReceiver 到点触发，WorkManager 负责网络约束/退避/执行 |
-| 权限 | 多个（存储/开机/网络） | INTERNET / SET_WALLPAPER / POST_NOTIFICATIONS / RECEIVE_BOOT_COMPLETED |
+| 权限 | 多个（存储/开机/网络） | INTERNET / SET_WALLPAPER / POST_NOTIFICATIONS / RECEIVE_BOOT_COMPLETED / SCHEDULE_EXACT_ALARM |
 
 ## 目录结构
 
@@ -137,9 +137,9 @@ BingWallpaper/
 ### 1. 每日调度：AlarmManager + WorkManager
 
 当前源码采用混合方案：
-- `WorkScheduler.apply()` 用 `AlarmManager.setAndAllowWhileIdle()` 排到用户设定的下一次 `hh:mm`
+- `WorkScheduler.apply()` 优先用 `AlarmManager.setExactAndAllowWhileIdle()` 排到用户设定的下一次 `hh:mm`，没有精确闹钟权限时退回 `setAndAllowWhileIdle()`
 - `DailyWallpaperReceiver` 到点后调用 `WorkScheduler.runOnce()`，真正下载和设置仍由 `SetWallpaperWorker` 执行
-- `SetWallpaperWorker` 使用 WorkManager 网络约束：Wi-Fi Only 对应 `UNMETERED`，否则 `CONNECTED`
+- `SetWallpaperWorker` 的 WorkManager 约束只要求 `CONNECTED`；Wi-Fi Only 在 Worker 内按 `NetworkCapabilities.TRANSPORT_WIFI/ETHERNET` 判断，避免部分系统把 Wi-Fi 标记为 metered 后任务一直等待
 - Worker 失败后使用指数退避重试，最多尝试 5 次
 - 设备重启会清空 AlarmManager 闹钟，所以 `BootReceiver` 接收 `BOOT_COMPLETED` 后：
   - 如果自动更换开启，先立即补执行一次
@@ -162,7 +162,7 @@ wm.setBitmap(bitmap, null, true, flag)
 
 ### 3. Bing API
 
-- 直接请求 `https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=<设置项>`，走 HTTPS
+- 直接请求 `https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=<设置项>`，走 HTTPS
 - `mkt` 默认由设备 Locale 推导，例如 `zh-CN` / `en-US`，也可在设置页手动输入
 - 使用 `_UHD.jpg` 后缀（Bing 返回原图，一般 3840×2160）
 - 缩略图走 `_640x360.jpg`，供网格快速预览

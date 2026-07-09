@@ -31,8 +31,12 @@
     <string name="setting_prefetch_wifi">Prefetch UHD images on Wi-Fi</string>
     <string name="setting_prefetch_wifi_summary">Cache recent high-res images in the background when the app opens (archives automatically with \"Auto-save to gallery\").</string>
     <string name="setting_run_now">Run once now</string>
+    <string name="setting_faq">FAQ</string>
+    <string name="setting_faq_summary">Troubleshoot automatic wallpaper changes.</string>
     <string name="setting_about">About</string>
     <string name="setting_about_summary">A 10-year-old side project, refurbished for 2026.</string>
+    <string name="faq_auto_change_title">Automatic wallpaper not working?</string>
+    <string name="faq_auto_change_body">- Check whether unrestricted background running is enabled.\n- Lock this app in the recent apps screen.\n- Try granting the alarm permission in app details, if available.</string>
     <string name="about_title">About</string>
     <string name="about_body">A helper that automatically changes your wallpaper to the daily Bing image.\nDesigned and built by Youth．霖; the latest source code is available on GitHub, and feedback is welcome on my blog.\nAll data comes from Bing; image copyrights belong to their original authors, and this application is copyrighted by the author.</string>
 

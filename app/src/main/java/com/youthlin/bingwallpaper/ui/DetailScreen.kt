@@ -203,6 +203,7 @@ private fun DetailPage(
     val progress by progressFlow.collectAsStateWithLifecycle()
     val downloading = !progress.done && progress.percent < 100
     val imageModel: Any = localFile ?: previewUrl
+    val copyrightLines = remember(entry.copyright) { splitCopyright(entry.copyright) }
 
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
@@ -230,9 +231,16 @@ private fun DetailPage(
         Column(Modifier.padding(horizontal = 16.dp)) {
             Text(text = entry.title, style = MaterialTheme.typography.titleMedium)
             Text(
-                text = entry.copyright, style = MaterialTheme.typography.bodySmall,
+                text = copyrightLines.description, style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(top = 4.dp)
             )
+            if (copyrightLines.credit.isNotBlank()) {
+                Text(
+                    text = copyrightLines.credit,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
             Text(
                 text = entry.date, style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.padding(top = 4.dp)
@@ -350,4 +358,20 @@ private fun formatBytes(bytes: Long): String {
     if (kb < 1024) return "%.0fKB".format(kb)
     val mb = kb / 1024.0
     return "%.1fMB".format(mb)
+}
+
+private data class CopyrightLines(
+    val description: String,
+    val credit: String
+)
+
+private fun splitCopyright(copyright: String): CopyrightLines {
+    val left = listOf('(', '（').map { copyright.indexOf(it) }.filter { it >= 0 }.minOrNull()
+    if (left == null) return CopyrightLines(description = copyright.trim(), credit = "")
+
+    val right = copyright.indexOfAny(charArrayOf(')', '）'), startIndex = left + 1)
+        .let { if (it >= 0) it else copyright.length }
+    val description = copyright.substring(0, left).trim()
+    val credit = copyright.substring(left + 1, right).trim()
+    return CopyrightLines(description = description, credit = credit)
 }

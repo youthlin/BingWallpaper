@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit
 
 /**
  * 必应壁纸 API 接口。
- * 请求地址：https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=zh-CN
+ * 请求地址：https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=zh-CN
  * 返回 JSON 格式的最近 8 天壁纸信息。
  */
 interface BingApi {
@@ -33,7 +33,7 @@ interface BingApi {
  * 创建 BingApi 实例的工厂，同时提供图片 URL 拼接工具方法。
  */
 object BingApiFactory {
-    private const val BASE_URL = "https://cn.bing.com/"
+    private const val BASE_URL = "https://www.bing.com/"
 
     private val json = Json {
         ignoreUnknownKeys = true // 忽略 API 新增的未知字段，避免崩溃
@@ -63,7 +63,7 @@ object BingApiFactory {
     /**
      * 把 Bing 的 urlBase 拼成完整的图片下载地址。
      * 例如 urlBase="/th?id=OHR.xxx"，suffix="_UHD.jpg"
-     * → "https://cn.bing.com/th?id=OHR.xxx_UHD.jpg"
+     * → "https://www.bing.com/th?id=OHR.xxx_UHD.jpg"
      */
     fun buildImageUrl(urlBase: String, suffix: String = "_UHD.jpg"): String {
         val base = if (urlBase.startsWith("http")) urlBase else BASE_URL.trimEnd('/') + urlBase
