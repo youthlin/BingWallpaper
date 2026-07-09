@@ -1,9 +1,14 @@
 package com.youthlin.bingwallpaper.ui
 
+import android.Manifest
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -64,6 +69,19 @@ fun SettingsScreen() {
     var showMarketDialog by remember { mutableStateOf(false) }
     var showFaq by remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
+    val storagePermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            scope.launch { store.setSaveToGallery(true) }
+        } else {
+            Toast.makeText(
+                context,
+                context.getString(R.string.msg_storage_permission_required),
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
 
     // 设置变更时自动同步 WorkManager 调度
     LaunchedEffect(settings) { WorkScheduler.apply(context, settings) }
@@ -114,6 +132,10 @@ fun SettingsScreen() {
                 title = stringResource(R.string.setting_run_now),
                 summary = null
             ) {
+                if (settings.saveToGallery && needsLegacyStoragePermission(context)) {
+                    storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    return@ClickableRow
+                }
                 Toast.makeText(
                     context,
                     context.getString(R.string.msg_applying),
@@ -147,7 +169,13 @@ fun SettingsScreen() {
                 title = stringResource(R.string.setting_save_to_gallery),
                 summary = stringResource(R.string.setting_save_to_gallery_summary),
                 checked = settings.saveToGallery,
-                onChange = { scope.launch { store.setSaveToGallery(it) } }
+                onChange = { enabled ->
+                    if (enabled && needsLegacyStoragePermission(context)) {
+                        storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    } else {
+                        scope.launch { store.setSaveToGallery(enabled) }
+                    }
+                }
             )
             HorizontalDivider()
             // Wi-Fi 下自动预下载大图
@@ -301,6 +329,12 @@ private fun openUrl(context: Context, url: String) {
             Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         )
     }
+}
+
+private fun needsLegacyStoragePermission(context: Context): Boolean {
+    return Build.VERSION.SDK_INT <= Build.VERSION_CODES.P &&
+            context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+            PackageManager.PERMISSION_GRANTED
 }
 
 /** 开关行组件（标题 + 说明 + 开关） */

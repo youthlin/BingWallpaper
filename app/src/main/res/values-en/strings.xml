@@ -52,6 +52,8 @@
     <string name="msg_saved_to_gallery">Saved to gallery.</string>
     <string name="msg_link_copied">Original link copied</string>
     <string name="msg_share_prepare">Preparing to share…</string>
+    <string name="msg_open_link_failed">Unable to open link</string>
+    <string name="msg_storage_permission_required">Storage permission is required to save to gallery.</string>
     <string name="msg_refresh_fail">Refresh failed: %1$s</string>
     <string name="msg_no_data">No data yet — pull to refresh.</string>
     <string name="msg_download_progress">Downloading %1$d%%  %2$s / %3$s</string>

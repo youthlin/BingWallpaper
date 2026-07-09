@@ -52,6 +52,8 @@
     <string name="msg_saved_to_gallery">已保存到图库</string>
     <string name="msg_link_copied">已复制原图链接</string>
     <string name="msg_share_prepare">正在准备分享…</string>
+    <string name="msg_open_link_failed">无法打开链接</string>
+    <string name="msg_storage_permission_required">需要存储权限才能保存到图库</string>
     <string name="msg_refresh_fail">刷新失败：%1$s</string>
     <string name="msg_no_data">暂无数据，请刷新</string>
     <string name="msg_download_progress">下载中 %1$d%%  %2$s / %3$s</string>

@@ -1,9 +1,11 @@
 package com.youthlin.bingwallpaper.data
 
+import android.Manifest
 import android.content.ContentUris
 import android.app.WallpaperManager
 import android.content.ContentValues
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
@@ -248,6 +250,8 @@ class WallpaperRepository(
             }
             val url = BingApiFactory.buildImageUrl(entry.urlBase, variant)
             val req = Request.Builder().url(url).build()
+            val tmp = tempVariantFile(out)
+            tmp.delete()
             progress.value = DownloadProgress(key, 0, -1, done = false)
             try {
                 http.newCall(req).execute().use { resp ->
@@ -260,7 +264,7 @@ class WallpaperRepository(
                     val total = body.contentLength()
                     progress.value = DownloadProgress(key, 0, total, done = false)
                     body.source().use { source ->
-                        out.outputStream().use { sink ->
+                        tmp.outputStream().use { sink ->
                             var downloaded = 0L
                             val buffer = ByteArray(8192)
                             while (true) {
@@ -273,10 +277,18 @@ class WallpaperRepository(
                         }
                     }
                 }
+                if (!isDecodableImage(tmp)) {
+                    throw IOException("Downloaded file is not a valid image: $url")
+                }
+                if (!tmp.renameTo(out)) {
+                    tmp.copyTo(out, overwrite = true)
+                    tmp.delete()
+                }
                 progress.value = DownloadProgress(key, out.length(), out.length(), done = true)
                 out
             } catch (e: Exception) {
                 // 下载失败时也要标记 done = true，否则进度条会一直显示
+                tmp.delete()
                 progress.value = DownloadProgress(key, 0, 0, done = true, error = e.message)
                 throw e
             }
@@ -334,6 +346,11 @@ class WallpaperRepository(
                 }
             } else {
                 // Android 9 及以下直接写文件
+                if (context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    != PackageManager.PERMISSION_GRANTED
+                ) {
+                    throw IOException("WRITE_EXTERNAL_STORAGE permission is required")
+                }
                 val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
                 val dest = File(dir, "BingWallpaper/$displayName")
                 if (dest.exists() && dest.length() > 0) {
@@ -371,6 +388,9 @@ class WallpaperRepository(
     private fun variantFile(date: String, variant: String): File =
         File(wallpapersDir(), "${date}${variant.replace('/', '_')}")
 
+    private fun tempVariantFile(out: File): File =
+        File(out.parentFile, "${out.name}.download")
+
     private fun legacyDownloadedFile(date: String): File =
         File(wallpapersDir(), "$date.jpg")
 
@@ -378,7 +398,13 @@ class WallpaperRepository(
         path?.let(::File)?.let(::existingFile)
 
     private fun existingFile(file: File): File? =
-        file.takeIf { it.exists() && it.length() > 0 }
+        file.takeIf { it.exists() && it.length() > 0 && isDecodableImage(it) }
+
+    private fun isDecodableImage(file: File): Boolean {
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, options)
+        return options.outWidth > 0 && options.outHeight > 0
+    }
 
     /** 把 API 返回的 BingImage 转成数据库实体 */
     private fun BingImage.toEntity() = WallpaperEntity(

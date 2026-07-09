@@ -57,7 +57,9 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.youthlin.bingwallpaper.R
 import com.youthlin.bingwallpaper.data.db.WallpaperEntity
+import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import java.io.File
 
 /**
@@ -120,9 +122,7 @@ fun DetailScreen(
                             onClick = {
                                 menuExpanded = false
                                 currentEntry?.let { entry ->
-                                    val i = Intent(Intent.ACTION_VIEW, entry.copyrightLink.toUri())
-                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    context.startActivity(i)
+                                    openExternalLink(context, entry.copyrightLink)
                                 }
                             }
                         )
@@ -133,10 +133,7 @@ fun DetailScreen(
                             onClick = {
                                 menuExpanded = false
                                 currentEntry?.let { entry ->
-                                    val uri = vm.originalUrl(entry).toUri()
-                                    val i = Intent(Intent.ACTION_VIEW, uri)
-                                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                    context.startActivity(i)
+                                    openExternalLink(context, vm.originalUrl(entry))
                                 }
                             }
                         )
@@ -374,4 +371,14 @@ private fun splitCopyright(copyright: String): CopyrightLines {
     val description = copyright.substring(0, left).trim()
     val credit = copyright.substring(left + 1, right).trim()
     return CopyrightLines(description = description, credit = credit)
+}
+
+private fun openExternalLink(context: Context, url: String) {
+    runCatching {
+        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+    }.onFailure {
+        Toast.makeText(context, context.getString(R.string.msg_open_link_failed), Toast.LENGTH_SHORT).show()
+    }
 }
