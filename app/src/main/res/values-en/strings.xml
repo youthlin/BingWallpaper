@@ -1,0 +1,58 @@
+<resources>
+    <string name="app_name">Bing Wallpaper</string>
+
+    <string name="tab_home">Wallpapers</string>
+    <string name="tab_settings">Settings</string>
+
+    <string name="action_set_wallpaper">Set as wallpaper</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_open_search">Search image</string>
+    <string name="action_open_original">View original</string>
+    <string name="action_copy_link">Copy link</string>
+    <string name="action_share">Share image</string>
+    <string name="action_more">More</string>
+    <string name="action_reset_device_market">Use device region</string>
+
+    <string name="target_home">Home screen</string>
+    <string name="target_lock">Lock screen</string>
+    <string name="target_both">Home + Lock</string>
+
+    <string name="setting_auto_daily">Daily auto-change</string>
+    <string name="setting_auto_daily_summary">Automatically download and apply the latest Bing wallpaper every day.</string>
+    <string name="setting_time">Time of day</string>
+    <string name="setting_market">Bing market</string>
+    <string name="setting_market_summary">Controls the daily image and text region. Device default: %1$s</string>
+    <string name="setting_market_hint">For example zh-CN, en-US, ja-JP</string>
+    <string name="setting_target">Wallpaper target</string>
+    <string name="setting_only_wifi">Wi-Fi only</string>
+    <string name="setting_only_wifi_summary">Avoid downloading over mobile data.</string>
+    <string name="setting_save_to_gallery">Auto-save to gallery</string>
+    <string name="setting_save_to_gallery_summary">Saved to Pictures/BingWallpaper.</string>
+    <string name="setting_prefetch_wifi">Prefetch UHD images on Wi-Fi</string>
+    <string name="setting_prefetch_wifi_summary">Cache recent high-res images in the background when the app opens (archives automatically with \"Auto-save to gallery\").</string>
+    <string name="setting_run_now">Run once now</string>
+    <string name="setting_about">About</string>
+    <string name="setting_about_summary">A 10-year-old side project, refurbished for 2026.</string>
+    <string name="about_title">About</string>
+    <string name="about_body">A helper that automatically changes your wallpaper to the daily Bing image.\nDesigned and built by Youth．霖; the latest source code is available on GitHub, and feedback is welcome on my blog.\nAll data comes from Bing; image copyrights belong to their original authors, and this application is copyrighted by the author.</string>
+
+    <string name="notification_channel_name">Auto wallpaper update</string>
+    <string name="notification_channel_desc">Notifications shown while the daily wallpaper is being applied.</string>
+    <string name="notification_working">Downloading today\'s Bing wallpaper…</string>
+    <string name="notification_success">Today\'s wallpaper is applied.</string>
+
+    <string name="msg_set_success">Wallpaper applied.</string>
+    <string name="msg_set_fail">Failed to set wallpaper: %1$s</string>
+    <string name="msg_share_failed">Share failed: %1$s</string>
+    <string name="msg_applying">Applying wallpaper…</string>
+    <string name="msg_saved_to_gallery">Saved to gallery.</string>
+    <string name="msg_link_copied">Original link copied</string>
+    <string name="msg_share_prepare">Preparing to share…</string>
+    <string name="msg_refresh_fail">Refresh failed: %1$s</string>
+    <string name="msg_no_data">No data yet — pull to refresh.</string>
+    <string name="msg_download_progress">Downloading %1$d%%  %2$s / %3$s</string>
+    <string name="msg_download_indeterminate">Downloading…</string>
+    <string name="msg_load_failed">Load failed</string>
+    <string name="hint_downloading">Downloading…</string>
+    <string name="hint_downloading_pct">Downloading %1$d%%</string>
+</resources>
