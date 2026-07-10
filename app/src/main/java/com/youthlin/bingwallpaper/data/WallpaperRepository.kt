@@ -84,7 +84,7 @@ class WallpaperRepository(
         val resp = api.archive(n = count.coerceIn(1, 8), mkt = market)
         val entities = resp.images.map { it.toEntity() }
         if (entities.isEmpty()) error("Bing returned an empty image list")
-        db.wallpapers().insertIfAbsent(entities)
+        db.wallpapers().upsertMetadata(entities)
         return db.wallpapers().latest()!!
     }
 
@@ -338,6 +338,12 @@ class WallpaperRepository(
     }
 
     suspend fun ensureHeroImage(entry: WallpaperEntity): WallpaperImage = withContext(Dispatchers.IO) {
+        uhdImageRef(entry)?.let { cached ->
+            progressFlows[uhdProgressKey(entry.date)]?.value =
+                DownloadProgress(uhdProgressKey(entry.date), 0, 0, done = true)
+            return@withContext cached
+        }
+
         val settings = SettingsStore(context).current()
         if (settings.saveToGallery && settings.saveUhdToGallery) {
             ensureGalleryVariant(entry, GalleryKind.UHD)

@@ -137,7 +137,7 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun heroProgress(entry: WallpaperEntity): StateFlow<DownloadProgress> {
         val key = repo.uhdProgressKey(entry.date)
-        if (heroJobs[entry.date]?.isActive != true) {
+        if (repo.uhdImageRef(entry) == null && heroJobs[entry.date]?.isActive != true) {
             heroJobs[entry.date] = viewModelScope.launch {
                 runCatching { repo.ensureHeroImage(entry) }
             }

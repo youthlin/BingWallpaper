@@ -61,6 +61,46 @@ interface WallpaperDao {
     /** 批量插入，已存在的跳过 */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertIfAbsent(entities: List<WallpaperEntity>)
+
+    /**
+     * 刷新 API 元数据，但保留已下载/已入图库的 file_path。
+     * SQLite UPSERT 在 Room 2.6 可直接执行。
+     */
+    @Query(
+        """
+        INSERT INTO wallpapers(date, start_date, url_base, title, copyright, copyright_link, file_path, created_at)
+        VALUES(:date, :startDate, :urlBase, :title, :copyright, :copyrightLink, null, :createdAt)
+        ON CONFLICT(date) DO UPDATE SET
+            start_date = excluded.start_date,
+            url_base = excluded.url_base,
+            title = excluded.title,
+            copyright = excluded.copyright,
+            copyright_link = excluded.copyright_link
+        """
+    )
+    suspend fun upsertMetadata(
+        date: String,
+        startDate: String,
+        urlBase: String,
+        title: String,
+        copyright: String,
+        copyrightLink: String,
+        createdAt: Long
+    )
+
+    suspend fun upsertMetadata(entities: List<WallpaperEntity>) {
+        entities.forEach {
+            upsertMetadata(
+                date = it.date,
+                startDate = it.startDate,
+                urlBase = it.urlBase,
+                title = it.title,
+                copyright = it.copyright,
+                copyrightLink = it.copyrightLink,
+                createdAt = it.createdAt
+            )
+        }
+    }
 }
 
 /** Room 数据库定义 */
