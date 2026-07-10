@@ -29,8 +29,11 @@ class PrefetchUhdWorker(
         val entries = repo.observeAll().first().sortedByDescending { it.date }
         for (e in entries) {
             try {
-                val f = repo.ensureVariant(e, "_UHD.jpg")
-                if (settings.saveToGallery) repo.saveToGallery(e, f)
+                if (settings.saveToGallery && (settings.saveUhdToGallery || settings.savePortraitToGallery)) {
+                    repo.ensureSelectedGalleryImages(e)
+                } else {
+                    repo.ensureVariant(e, "_UHD.jpg")
+                }
             } catch (t: Throwable) {
                 // 单张图片下载失败不中断整批
                 Log.w(TAG, "Prefetch failed for ${e.date}", t)

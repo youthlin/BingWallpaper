@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,6 +7,13 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
 }
+
+val localProperties = rootProject.file("local.properties")
+    .takeIf { it.exists() }
+    ?.inputStream()
+    ?.use { input ->
+        Properties().apply { load(input) }
+    } ?: Properties()
 
 android {
     namespace = "com.youthlin.bingwallpaper"
@@ -20,13 +29,29 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    signingConfigs {
+        create("releaseLocal") {
+            val store = localProperties.getProperty("releaseStoreFile")
+            if (!store.isNullOrBlank()) {
+                storeFile = rootProject.file(store)
+                storePassword = localProperties.getProperty("releaseStorePassword")
+                keyAlias = localProperties.getProperty("releaseKeyAlias")
+                keyPassword = localProperties.getProperty("releaseKeyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Personal-use build: sign with debug key so `./gradlew assembleRelease` works out of the box.
-            signingConfig = signingConfigs.getByName("debug")
+            // Personal-use fallback: use debug signing unless local.properties provides the old release key.
+            signingConfig = if (localProperties.getProperty("releaseStoreFile").isNullOrBlank()) {
+                signingConfigs.getByName("debug")
+            } else {
+                signingConfigs.getByName("releaseLocal")
+            }
         }
         debug {
             applicationIdSuffix = ".debug"

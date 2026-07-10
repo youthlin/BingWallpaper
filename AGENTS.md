@@ -57,7 +57,7 @@ Bing API → Retrofit → BingArchiveResponse (DTO)
 ```bash
 # 需要 JDK 17 + Android Studio Ladybug (2024.2) 及以上
 ./gradlew assembleDebug         # 编译 debug APK
-./gradlew assembleRelease       # 编译 release（用 debug 签名，个人使用够用）
+./gradlew assembleRelease       # 编译 release（默认 debug 签名；可用 local.properties 配旧 key）
 ./gradlew clean                 # 清理
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
@@ -75,10 +75,11 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - **字符串**: 全部硬编码到 `res/values/strings.xml`（中文）+ `res/values-en/strings.xml`（英文），通过 `R.string.xxx` 引用
 - **API 模型**: `kotlinx.serialization`，`@SerialName` 映射 JSON 字段，`Json { ignoreUnknownKeys = true }`
 - **文件路径**:
-  - UHD 原图下载到 `context.filesDir/wallpapers/{date}_UHD.jpg`（旧 `{date}.jpg` 兼容读取）
-  - 竖屏壁纸缓存下载到 `context.filesDir/wallpapers/{date}_768x1366.jpg`
-  - 图库保存只保存 UHD 原图，不保存竖屏缓存
+  - 未保存到图库时，UHD 原图下载到 `context.filesDir/wallpapers/{date}_UHD.jpg`（旧 `{date}.jpg` 兼容读取）
+  - 未保存到图库时，竖屏壁纸缓存下载到 `context.filesDir/wallpapers/{date}_768x1366.jpg`
+  - 保存到图库时，UHD 原图和 768x1366 竖屏图可分别勾选；成功写入 MediaStore 后删除对应内部缓存，后续使用图库 Uri
 - **FileProvider**: `file_paths.xml` 映射 `files-path name="wallpapers"`，用于分享功能
+- **Release 签名**: `app/build.gradle.kts` 可从 `local.properties` 读取 `releaseStoreFile` / `releaseStorePassword` / `releaseKeyAlias` / `releaseKeyPassword`；未配置时 fallback 到 debug signing。签名密码不要提交。
 
 ## 权限
 
@@ -102,12 +103,13 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 - `PrefetchUhdWorker` + `WorkScheduler.enqueuePrefetch()` — Wi-Fi 下自动预取大图
 - `WallpaperRepository.ensureVariant()` / `ensureHeroFile()` — 下载进度追踪
-- `WallpaperRepository.saveToGallery()` — 通过 MediaStore 保存到系统图库
+- `WallpaperRepository.ensureSelectedGalleryImages()` — 按设置将 UHD/竖屏图写入 MediaStore；保存成功后对应内部缓存不再保留
 - `DownloadProgress` 数据类 + `progressFlow()` — 多观察者共享下载进度
 - `SetWallpaperWorker.KEY_SAVED_NEW` — 输出数据标记是否新增图库保存
 - `BingViewModel.heroProgress()` / `progressOf()` / `share()` — 详情页下载进度 + 分享
 - `WallpaperRepository.applyBestFit()` — 竖屏设备优先使用 Bing `_768x1366.jpg` 竖屏构图，失败回退 UHD 居中裁剪
 - `SettingsStore.market` — Bing API `mkt` 默认来自设备 Locale，也可在设置页手动输入
+- `SettingsStore.saveUhdToGallery` / `savePortraitToGallery` — 控制自动保存图库时保存哪些规格
 - 首页网格 `GridCells.Adaptive(160.dp)`；标题固定单行高度，UHD 未完成前浅色显示
 
 ## 安全注意事项

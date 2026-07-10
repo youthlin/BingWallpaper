@@ -178,6 +178,22 @@ fun SettingsScreen() {
                 }
             )
             HorizontalDivider()
+            if (settings.saveToGallery) {
+                SwitchRow(
+                    title = stringResource(R.string.setting_save_uhd_to_gallery),
+                    summary = stringResource(R.string.setting_save_uhd_to_gallery_summary),
+                    checked = settings.saveUhdToGallery,
+                    onChange = { scope.launch { store.setSaveUhdToGallery(it) } }
+                )
+                HorizontalDivider()
+                SwitchRow(
+                    title = stringResource(R.string.setting_save_portrait_to_gallery),
+                    summary = stringResource(R.string.setting_save_portrait_to_gallery_summary),
+                    checked = settings.savePortraitToGallery,
+                    onChange = { scope.launch { store.setSavePortraitToGallery(it) } }
+                )
+                HorizontalDivider()
+            }
             // Wi-Fi 下自动预下载大图
             SwitchRow(
                 title = stringResource(R.string.setting_prefetch_wifi),

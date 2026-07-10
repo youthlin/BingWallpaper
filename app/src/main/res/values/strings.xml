@@ -8,6 +8,7 @@
     <string name="action_refresh">刷新</string>
     <string name="action_open_search">搜索图片</string>
     <string name="action_open_original">查看原图</string>
+    <string name="action_open_portrait">查看竖屏壁纸</string>
     <string name="action_copy_link">复制链接</string>
     <string name="action_share">分享图片</string>
     <string name="action_more">更多</string>
@@ -28,6 +29,10 @@
     <string name="setting_only_wifi_summary">避免使用移动数据下载高清壁纸</string>
     <string name="setting_save_to_gallery">自动保存到图库</string>
     <string name="setting_save_to_gallery_summary">写入到 Pictures/BingWallpaper</string>
+    <string name="setting_save_uhd_to_gallery">UHD 高清原图</string>
+    <string name="setting_save_uhd_to_gallery_summary">保存 4K 横向原图；保存成功后不保留内部 UHD 副本</string>
+    <string name="setting_save_portrait_to_gallery">768x1366 竖屏壁纸</string>
+    <string name="setting_save_portrait_to_gallery_summary">保存 Bing 手机壁纸版；保存成功后不保留内部竖屏副本</string>
     <string name="setting_prefetch_wifi">Wi-Fi 环境自动下载大图</string>
     <string name="setting_prefetch_wifi_summary">打开应用时后台把最近的高清图缓存下来（配合“自动保存到图库”可自动归档）</string>
     <string name="setting_run_now">立即执行一次</string>
@@ -48,6 +53,7 @@
     <string name="msg_set_success">壁纸设置成功</string>
     <string name="msg_set_fail">壁纸设置失败：%1$s</string>
     <string name="msg_share_failed">分享失败：%1$s</string>
+    <string name="msg_open_image_failed">打开图片失败：%1$s</string>
     <string name="msg_applying">正在设为壁纸…</string>
     <string name="msg_saved_to_gallery">已保存到图库</string>
     <string name="msg_link_copied">已复制原图链接</string>

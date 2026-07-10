@@ -34,24 +34,24 @@ class SetWallpaperWorker(
             val savedNew = if (date != null) {
                 // 模式 1：设置指定日期的壁纸
                 val entry = repo.findByDate(date) ?: return Result.failure()
-                val file = repo.ensureDownloaded(entry)
-                repo.applyBestFit(entry, settings.target)
+                val savedByApply = repo.applyBestFit(entry, settings.target)
                 Log.i(TAG, "Applied wallpaper for ${entry.date}: ${entry.title}")
                 if (settings.saveToGallery) {
-                    try { repo.saveToGallery(entry, file) } catch (_: Exception) { false }
+                    val savedSelected = try { repo.ensureSelectedGalleryImages(entry) } catch (_: Exception) { false }
+                    savedByApply || savedSelected
                 } else {
-                    false
+                    savedByApply
                 }
             } else {
                 // 模式 2：从 API 获取最新壁纸并设置
                 val entry = repo.refresh(count = 1)
-                val file = repo.ensureDownloaded(entry)
-                repo.applyBestFit(entry, settings.target)
+                val savedByApply = repo.applyBestFit(entry, settings.target)
                 Log.i(TAG, "Applied wallpaper for ${entry.date}: ${entry.title}")
                 if (settings.saveToGallery) {
-                    try { repo.saveToGallery(entry, file) } catch (_: Exception) { false }
+                    val savedSelected = try { repo.ensureSelectedGalleryImages(entry) } catch (_: Exception) { false }
+                    savedByApply || savedSelected
                 } else {
-                    false
+                    savedByApply
                 }
             }
             Result.success(workDataOf(KEY_SAVED_NEW to savedNew))

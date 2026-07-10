@@ -24,6 +24,8 @@ data class UserSettings(
     val onlyWifi: Boolean = true,         // 仅 Wi-Fi 下更新
     val target: WallpaperTarget = WallpaperTarget.BOTH, // 壁纸目标（主屏/锁屏/双屏）
     val saveToGallery: Boolean = true,    // 自动保存到系统图库
+    val saveUhdToGallery: Boolean = true, // 自动保存 UHD 原图到图库
+    val savePortraitToGallery: Boolean = false, // 自动保存竖屏壁纸到图库
     val prefetchOnWifi: Boolean = false,  // Wi-Fi 下自动预下载大图
     val market: String = SettingsStore.defaultMarket() // Bing API 市场，如 zh-CN / en-US
 )
@@ -43,6 +45,8 @@ class SettingsStore(private val context: Context) {
             onlyWifi = p[KEY_ONLY_WIFI] ?: true,
             target = WallpaperTarget.entries.getOrElse(p[KEY_TARGET] ?: 2) { WallpaperTarget.BOTH },
             saveToGallery = p[KEY_SAVE_GALLERY] ?: true,
+            saveUhdToGallery = p[KEY_SAVE_UHD_GALLERY] ?: true,
+            savePortraitToGallery = p[KEY_SAVE_PORTRAIT_GALLERY] ?: false,
             prefetchOnWifi = p[KEY_PREFETCH_WIFI] ?: false,
             market = normalizeMarket(p[KEY_MARKET] ?: defaultMarket())
         )
@@ -61,6 +65,10 @@ class SettingsStore(private val context: Context) {
         context.dataStore.edit { it[KEY_TARGET] = target.ordinal }
     suspend fun setSaveToGallery(save: Boolean) =
         context.dataStore.edit { it[KEY_SAVE_GALLERY] = save }
+    suspend fun setSaveUhdToGallery(save: Boolean) =
+        context.dataStore.edit { it[KEY_SAVE_UHD_GALLERY] = save }
+    suspend fun setSavePortraitToGallery(save: Boolean) =
+        context.dataStore.edit { it[KEY_SAVE_PORTRAIT_GALLERY] = save }
     suspend fun setPrefetchOnWifi(enabled: Boolean) =
         context.dataStore.edit { it[KEY_PREFETCH_WIFI] = enabled }
     suspend fun setMarket(market: String) =
@@ -97,6 +105,8 @@ class SettingsStore(private val context: Context) {
         private val KEY_ONLY_WIFI = booleanPreferencesKey("only_wifi")
         private val KEY_TARGET = intPreferencesKey("target")
         private val KEY_SAVE_GALLERY = booleanPreferencesKey("save_gallery")
+        private val KEY_SAVE_UHD_GALLERY = booleanPreferencesKey("save_uhd_gallery")
+        private val KEY_SAVE_PORTRAIT_GALLERY = booleanPreferencesKey("save_portrait_gallery")
         private val KEY_PREFETCH_WIFI = booleanPreferencesKey("prefetch_wifi")
         private val KEY_MARKET = stringPreferencesKey("market")
     }

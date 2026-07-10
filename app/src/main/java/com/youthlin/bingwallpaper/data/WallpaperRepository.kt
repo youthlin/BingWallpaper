@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -30,6 +31,15 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.math.roundToInt
+
+data class WallpaperImage(
+    val file: File? = null,
+    val uri: Uri? = null,
+    val savedNew: Boolean = false
+) {
+    val model: Any
+        get() = uri ?: file ?: error("WallpaperImage has neither file nor uri")
+}
 
 /**
  * 数据仓库——整个应用的数据中心。
@@ -94,6 +104,13 @@ class WallpaperRepository(
             ?: existingFile(legacyDownloadedFile(entry.date))
     }
 
+    /** 返回已经存在的 UHD 图片引用，可能是内部文件，也可能是图库 MediaStore Uri。 */
+    fun uhdImageRef(entry: WallpaperEntity): WallpaperImage? {
+        storedImageRef(entry.filePath)?.let { return it }
+        localUhdFile(entry)?.let { return WallpaperImage(file = it) }
+        return null
+    }
+
     // ==================== 设置壁纸 ====================
 
     /**
@@ -101,26 +118,26 @@ class WallpaperRepository(
      * @param target 目标：主屏幕 / 锁屏 / 双屏
      */
     suspend fun apply(file: File, target: WallpaperTarget) {
-        applyPreparedBitmap(file, target, centerCrop = true)
+        applyPreparedBitmap(WallpaperImage(file = file), target, centerCrop = true)
     }
 
-    /** 为竖屏手机优先使用 Bing 提供的竖屏构图版本，失败时退回 UHD 居中裁剪。 */
-    suspend fun applyBestFit(entry: WallpaperEntity, target: WallpaperTarget) {
+    /** 为竖屏手机优先使用 Bing 提供的竖屏构图版本，失败时退回 UHD 居中裁剪。返回是否新增保存到图库。 */
+    suspend fun applyBestFit(entry: WallpaperEntity, target: WallpaperTarget): Boolean {
         val screenSize = currentDisplaySize()
         val portrait = if (screenSize.second > screenSize.first) {
-            runCatching { ensurePortraitWallpaperFile(entry) }.getOrNull()
+            runCatching { ensurePortraitImage(entry) }.getOrNull()
         } else {
             null
         }
-        val file = portrait ?: ensureDownloaded(entry)
-        applyPreparedBitmap(file, target, centerCrop = portrait == null)
+        val image = portrait ?: ensureHeroImage(entry)
+        applyPreparedBitmap(image, target, centerCrop = portrait == null)
+        return portrait?.savedNew == true
     }
 
-    private suspend fun applyPreparedBitmap(file: File, target: WallpaperTarget, centerCrop: Boolean) {
+    private suspend fun applyPreparedBitmap(image: WallpaperImage, target: WallpaperTarget, centerCrop: Boolean) {
         withContext(Dispatchers.IO) {
             val wm = WallpaperManager.getInstance(context)
-            val source = BitmapFactory.decodeFile(file.absolutePath)
-                ?: throw IOException("Failed to decode ${file.absolutePath}")
+            val source = decodeBitmap(image)
             val screenSize = currentDisplaySize()
             val bitmap = if (centerCrop) {
                 centerCropToRatio(source, screenSize.first, screenSize.second)
@@ -139,6 +156,18 @@ class WallpaperRepository(
                 if (bitmap !== source && !source.isRecycled) source.recycle()
             }
         }
+    }
+
+    private fun decodeBitmap(image: WallpaperImage): Bitmap {
+        image.file?.let { file ->
+            return BitmapFactory.decodeFile(file.absolutePath)
+                ?: throw IOException("Failed to decode ${file.absolutePath}")
+        }
+        val uri = image.uri ?: throw IOException("Wallpaper image has no data source")
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            return BitmapFactory.decodeStream(input)
+                ?: throw IOException("Failed to decode $uri")
+        } ?: throw IOException("Failed to open $uri")
     }
 
     private fun currentDisplaySize(): Pair<Int, Int> {
@@ -222,7 +251,7 @@ class WallpaperRepository(
      * 如果文件已存在，直接返回缓存。
      */
     suspend fun ensureVariant(entry: WallpaperEntity, variant: String): File = withContext(Dispatchers.IO) {
-        val key = uhdProgressKey(entry.date)
+        val key = progressKey(entry.date, variant)
         val progress = mutableProgressFlow(key)
         wallpapersDir(create = true)
         if (variant == "_UHD.jpg") {
@@ -308,58 +337,132 @@ class WallpaperRepository(
         file
     }
 
-    private suspend fun ensurePortraitWallpaperFile(entry: WallpaperEntity): File =
-        ensureVariant(entry, "_768x1366.jpg")
+    suspend fun ensureHeroImage(entry: WallpaperEntity): WallpaperImage = withContext(Dispatchers.IO) {
+        val settings = SettingsStore(context).current()
+        if (settings.saveToGallery && settings.saveUhdToGallery) {
+            ensureGalleryVariant(entry, GalleryKind.UHD)
+        } else {
+            WallpaperImage(file = ensureHeroFile(entry))
+        }
+    }
+
+    suspend fun ensurePortraitImage(entry: WallpaperEntity): WallpaperImage = withContext(Dispatchers.IO) {
+        val settings = SettingsStore(context).current()
+        if (settings.saveToGallery && settings.savePortraitToGallery) {
+            ensureGalleryVariant(entry, GalleryKind.PORTRAIT)
+        } else {
+            WallpaperImage(file = ensureVariant(entry, "_768x1366.jpg"))
+        }
+    }
+
+    suspend fun ensureSelectedGalleryImages(entry: WallpaperEntity): Boolean {
+        val settings = SettingsStore(context).current()
+        if (!settings.saveToGallery) return false
+
+        var savedNew = false
+        if (settings.saveUhdToGallery) {
+            savedNew = ensureGalleryVariant(entry, GalleryKind.UHD).savedNew || savedNew
+        }
+        if (settings.savePortraitToGallery) {
+            savedNew = ensureGalleryVariant(entry, GalleryKind.PORTRAIT).savedNew || savedNew
+        }
+        return savedNew
+    }
 
     // ==================== 保存到图库 ====================
 
-    /** 把下载好的图片保存到系统相册（Pictures/BingWallpaper/）。已存在则跳过。 */
+    /** 把下载好的 UHD 图片保存到系统相册（Pictures/BingWallpaper/）。已存在则跳过。 */
     suspend fun saveToGallery(entry: WallpaperEntity, file: File): Boolean {
-        return withContext(Dispatchers.IO) {
-            val displayName = "${entry.date}_Bing_${entry.title.take(50)}.jpg"
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Android 10+ 使用 MediaStore API
-                val relativePath = Environment.DIRECTORY_PICTURES + "/BingWallpaper/"
-                val resolver = context.contentResolver
-                if (findExistingGalleryUri(displayName, relativePath) != null) {
-                    return@withContext false
-                }
-                val values = ContentValues().apply {
-                    put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
-                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                    put(MediaStore.Images.Media.RELATIVE_PATH, relativePath)
-                    put(MediaStore.Images.Media.IS_PENDING, 1)
-                }
-                val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-                    ?: throw IOException("Failed to insert into MediaStore")
-                try {
-                    resolver.openOutputStream(uri)?.use { out ->
-                        file.inputStream().use { it.copyTo(out) }
-                    }
-                    values.clear()
-                    values.put(MediaStore.Images.Media.IS_PENDING, 0)
-                    resolver.update(uri, values, null, null)
-                    true
-                } catch (e: Exception) {
-                    resolver.delete(uri, null, null)
-                    throw e
-                }
-            } else {
-                // Android 9 及以下直接写文件
-                if (context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED
-                ) {
-                    throw IOException("WRITE_EXTERNAL_STORAGE permission is required")
-                }
-                val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-                val dest = File(dir, "BingWallpaper/$displayName")
-                if (dest.exists() && dest.length() > 0) {
-                    return@withContext false
-                }
-                dest.parentFile?.mkdirs()
-                file.copyTo(dest, overwrite = true)
-                true
+        val saved = saveFileToGallery(entry, file, GalleryKind.UHD)
+        deleteInternalVariant(entry, GalleryKind.UHD.variant)
+        val savedPath = saved.uri?.toString() ?: saved.file?.absolutePath
+        if (savedPath != null && entry.filePath != savedPath) {
+            db.wallpapers().upsert(entry.copy(filePath = savedPath))
+        }
+        return saved.savedNew
+    }
+
+    private suspend fun ensureGalleryVariant(entry: WallpaperEntity, kind: GalleryKind): WallpaperImage {
+        existingGalleryImage(entry, kind)?.let { existing ->
+            if (kind == GalleryKind.UHD && entry.filePath != existing.uri?.toString()) {
+                db.wallpapers().upsert(entry.copy(filePath = existing.uri.toString()))
             }
+            deleteInternalVariant(entry, kind.variant)
+            return existing
+        }
+
+        val local = ensureVariant(entry, kind.variant)
+        val saved = saveFileToGallery(entry, local, kind)
+        deleteInternalVariant(entry, kind.variant)
+        if (kind == GalleryKind.UHD && entry.filePath != saved.uri?.toString()) {
+            db.wallpapers().upsert(entry.copy(filePath = saved.uri.toString()))
+        }
+        return saved
+    }
+
+    private suspend fun saveFileToGallery(
+        entry: WallpaperEntity,
+        file: File,
+        kind: GalleryKind
+    ): WallpaperImage = withContext(Dispatchers.IO) {
+        existingGalleryImage(entry, kind)?.let { return@withContext it }
+
+        val displayName = galleryDisplayName(entry, kind)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val relativePath = GALLERY_RELATIVE_PATH
+            val resolver = context.contentResolver
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, displayName)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.RELATIVE_PATH, relativePath)
+                put(MediaStore.Images.Media.IS_PENDING, 1)
+            }
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+                ?: throw IOException("Failed to insert into MediaStore")
+            try {
+                resolver.openOutputStream(uri)?.use { out ->
+                    file.inputStream().use { it.copyTo(out) }
+                } ?: throw IOException("Failed to open $uri")
+                values.clear()
+                values.put(MediaStore.Images.Media.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+                WallpaperImage(uri = uri, savedNew = true)
+            } catch (e: Exception) {
+                resolver.delete(uri, null, null)
+                throw e
+            }
+        } else {
+            if (context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                throw IOException("WRITE_EXTERNAL_STORAGE permission is required")
+            }
+            val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            val dest = File(dir, "BingWallpaper/$displayName")
+            if (dest.exists() && dest.length() > 0) {
+                return@withContext WallpaperImage(file = dest, savedNew = false)
+            }
+            dest.parentFile?.mkdirs()
+            file.copyTo(dest, overwrite = true)
+            WallpaperImage(file = dest, savedNew = true)
+        }
+    }
+
+    private fun existingGalleryImage(entry: WallpaperEntity, kind: GalleryKind): WallpaperImage? {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return findExistingGalleryUri(galleryDisplayName(entry, kind), GALLERY_RELATIVE_PATH)
+                ?.let { WallpaperImage(uri = it, savedNew = false) }
+        }
+        val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+        val dest = File(dir, "BingWallpaper/${galleryDisplayName(entry, kind)}")
+        return existingFile(dest)?.let { WallpaperImage(file = it, savedNew = false) }
+    }
+
+    private fun galleryDisplayName(entry: WallpaperEntity, kind: GalleryKind): String {
+        val title = entry.title.take(50)
+        return when (kind) {
+            GalleryKind.UHD -> "${entry.date}_Bing_$title.jpg"
+            GalleryKind.PORTRAIT -> "${entry.date}_Bing_${title}_768x1366.jpg"
         }
     }
 
@@ -395,7 +498,14 @@ class WallpaperRepository(
         File(wallpapersDir(), "$date.jpg")
 
     private fun existingFile(path: String?): File? =
-        path?.let(::File)?.let(::existingFile)
+        path?.takeUnless { it.startsWith("content://") }?.let(::File)?.let(::existingFile)
+
+    private fun storedImageRef(path: String?): WallpaperImage? =
+        when {
+            path.isNullOrBlank() -> null
+            path.startsWith("content://") -> WallpaperImage(uri = Uri.parse(path))
+            else -> existingFile(path)?.let { WallpaperImage(file = it) }
+        }
 
     private fun existingFile(file: File): File? =
         file.takeIf { it.exists() && it.length() > 0 && isDecodableImage(it) }
@@ -404,6 +514,16 @@ class WallpaperRepository(
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.absolutePath, options)
         return options.outWidth > 0 && options.outHeight > 0
+    }
+
+    private fun progressKey(date: String, variant: String): String =
+        if (variant == "_UHD.jpg") uhdProgressKey(date) else "${date}${variant.replace('.', '_')}"
+
+    private fun deleteInternalVariant(entry: WallpaperEntity, variant: String) {
+        variantFile(entry.date, variant).delete()
+        if (variant == "_UHD.jpg") {
+            legacyDownloadedFile(entry.date).delete()
+        }
     }
 
     /** 把 API 返回的 BingImage 转成数据库实体 */
@@ -417,7 +537,13 @@ class WallpaperRepository(
     )
 
     private companion object {
+        private const val GALLERY_RELATIVE_PATH = "Pictures/BingWallpaper/"
         private val progressFlows = ConcurrentHashMap<String, MutableStateFlow<DownloadProgress>>()
         private val downloadMutex = Mutex()
+    }
+
+    private enum class GalleryKind(val variant: String) {
+        UHD("_UHD.jpg"),
+        PORTRAIT("_768x1366.jpg")
     }
 }

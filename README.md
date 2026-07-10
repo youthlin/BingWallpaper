@@ -71,7 +71,7 @@ Bing API (JSON)
 - 开机后如果自动更换开启，会立即补执行一次并恢复下一次每日闹钟
 - 竖屏设备设置壁纸时优先使用 Bing 竖屏构图 `_768x1366.jpg`，失败后退回 UHD 居中裁剪
 - 设置：定时时间、Bing 市场 mkt、目标屏幕、Wi-Fi Only、保存图库、Wi-Fi 预取、立即执行、Material You 动态取色
-- Wi-Fi 下自动预下载 UHD 大图；图库保存只保存 UHD 原图并做同名去重
+- Wi-Fi 下自动预下载图片；图库保存可选 UHD 原图和 768x1366 竖屏图，并做同名去重
 - 分享图片（通过 FileProvider）
 
 ## 技术栈对比
@@ -171,9 +171,10 @@ wm.setBitmap(bitmap, null, true, flag)
 ### 4. 存储
 
 - 元数据：Room 表 `wallpapers`（date 主键 + urlBase / title / copyright / filePath）
-- UHD 原图：应用私有目录 `filesDir/wallpapers/{date}_UHD.jpg`，旧路径 `{date}.jpg` 仍兼容读取
-- 竖屏壁纸缓存：`filesDir/wallpapers/{date}_768x1366.jpg`，只用于设置壁纸，不写入图库
-- 图库导出：通过 MediaStore API 写入 `Pictures/BingWallpaper/`，只保存 UHD 原图，同名已存在则跳过
+- UHD 原图：未开启图库保存时使用应用私有目录 `filesDir/wallpapers/{date}_UHD.jpg`，旧路径 `{date}.jpg` 仍兼容读取
+- 竖屏壁纸：未开启竖屏图库保存时使用 `filesDir/wallpapers/{date}_768x1366.jpg`
+- 图库导出：通过 MediaStore API 写入 `Pictures/BingWallpaper/`，可分别保存 UHD 原图和 768x1366 竖屏图，同名已存在则跳过
+- 如果某个规格选择保存到图库，图库中的 MediaStore Uri 就作为该规格的长期副本；成功保存后删除对应内部缓存，避免双份占用
 
 ### 5. 下载进度系统
 
@@ -187,7 +188,16 @@ wm.setBitmap(bitmap, null, true, flag)
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Release 变体默认使用 debug 签名（个人使用够了）。
+Release 变体默认使用 debug 签名；如果 `local.properties` 配置了旧版签名，则使用旧 key：
+
+```properties
+releaseStoreFile=/Users/youthlin.chen/Downloads/key.jks
+releaseStorePassword=...
+releaseKeyAlias=...
+releaseKeyPassword=...
+```
+
+不要把签名密码提交到仓库。
 
 ## 后续优化清单
 

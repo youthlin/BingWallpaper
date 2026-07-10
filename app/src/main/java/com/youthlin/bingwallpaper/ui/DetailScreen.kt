@@ -18,6 +18,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.OpenInBrowser
+import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.Wallpaper
@@ -56,11 +57,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.youthlin.bingwallpaper.R
+import com.youthlin.bingwallpaper.data.WallpaperImage
 import com.youthlin.bingwallpaper.data.db.WallpaperEntity
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
-import java.io.File
 
 /**
  * 壁纸详情页。
@@ -137,7 +138,16 @@ fun DetailScreen(
                                 }
                             }
                         )
-                        // 3. 复制链接：复制原图 URL 到剪贴板
+                        // 3. 查看竖屏壁纸：下载/打开 Bing 提供的手机壁纸版
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_open_portrait)) },
+                            leadingIcon = { Icon(Icons.Outlined.PhoneAndroid, contentDescription = null) },
+                            onClick = {
+                                menuExpanded = false
+                                currentEntry?.let { vm.viewPortrait(it) }
+                            }
+                        )
+                        // 4. 复制链接：复制原图 URL 到剪贴板
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_copy_link)) },
                             leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
@@ -146,7 +156,7 @@ fun DetailScreen(
                                 currentEntry?.let { vm.copyOriginalUrl(it) }
                             }
                         )
-                        // 4. 分享图片：先下载到本地，再通过系统分享发送
+                        // 5. 分享图片：先下载到本地/图库，再通过系统分享发送
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_share)) },
                             leadingIcon = { Icon(Icons.Outlined.Share, contentDescription = null) },
@@ -170,7 +180,7 @@ fun DetailScreen(
                 DetailPage(
                     entry = entry,
                     previewUrl = vm.previewUrl(entry),
-                    localFile = vm.localUhdFile(entry),
+                    uhdImage = vm.uhdImage(entry),
                     progressFlow = progressFlow,
                     onSet = { vm.setAsWallpaper(entry) },
                 )
@@ -193,13 +203,13 @@ fun DetailScreen(
 private fun DetailPage(
     entry: WallpaperEntity,
     previewUrl: String,
-    localFile: File?,
+    uhdImage: WallpaperImage?,
     progressFlow: kotlinx.coroutines.flow.StateFlow<com.youthlin.bingwallpaper.data.DownloadProgress>,
     onSet: () -> Unit,
 ) {
     val progress by progressFlow.collectAsStateWithLifecycle()
     val downloading = !progress.done && progress.percent < 100
-    val imageModel: Any = localFile ?: previewUrl
+    val imageModel: Any = uhdImage?.model ?: previewUrl
     val copyrightLines = remember(entry.copyright) { splitCopyright(entry.copyright) }
 
     Column(

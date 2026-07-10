@@ -3,7 +3,6 @@ package com.youthlin.bingwallpaper.ui
 import android.app.Application
 import android.content.Intent
 import android.widget.Toast
-import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
@@ -12,11 +11,11 @@ import com.youthlin.bingwallpaper.R
 import com.youthlin.bingwallpaper.data.BingApiFactory
 import com.youthlin.bingwallpaper.data.DownloadProgress
 import com.youthlin.bingwallpaper.data.SettingsStore
+import com.youthlin.bingwallpaper.data.WallpaperImage
 import com.youthlin.bingwallpaper.data.WallpaperRepository
 import com.youthlin.bingwallpaper.data.db.WallpaperEntity
 import com.youthlin.bingwallpaper.work.SetWallpaperWorker
 import com.youthlin.bingwallpaper.work.WorkScheduler
-import java.io.File
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -139,7 +138,7 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
         val key = repo.uhdProgressKey(entry.date)
         if (heroJobs[entry.date]?.isActive != true) {
             heroJobs[entry.date] = viewModelScope.launch {
-                runCatching { repo.ensureHeroFile(entry) }
+                runCatching { repo.ensureHeroImage(entry) }
             }
         }
         return repo.progressFlow(key)
@@ -152,9 +151,9 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
     fun progressOf(entry: WallpaperEntity): StateFlow<DownloadProgress> =
         repo.progressFlow(repo.uhdProgressKey(entry.date))
 
-    fun localUhdFile(entry: WallpaperEntity): File? = repo.localUhdFile(entry)
+    fun uhdImage(entry: WallpaperEntity): WallpaperImage? = repo.uhdImageRef(entry)
 
-    fun hasLocalUhd(entry: WallpaperEntity): Boolean = localUhdFile(entry) != null
+    fun hasLocalUhd(entry: WallpaperEntity): Boolean = uhdImage(entry) != null
 
     fun startWifiPrefetchIfNeeded(entries: List<WallpaperEntity>) {
         if (!userSettings.value.prefetchOnWifi) return
@@ -167,12 +166,10 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
         val ctx = getApplication<Application>()
         toast(ctx.getString(R.string.msg_share_prepare))
         viewModelScope.launch {
-            runCatching { repo.ensureHeroFile(entry) }
-                .onSuccess { file ->
+            runCatching { repo.ensureHeroImage(entry) }
+                .onSuccess { image ->
                     try {
-                        val uri = FileProvider.getUriForFile(
-                            ctx, "${ctx.packageName}.fileprovider", file
-                        )
+                        val uri = image.shareUri(ctx)
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "image/jpeg"
                             putExtra(Intent.EXTRA_STREAM, uri)
@@ -184,7 +181,7 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
                         }
                         ctx.startActivity(chooser)
                     } catch (e: IllegalArgumentException) {
-                        android.util.Log.w("BingViewModel", "FileProvider mapping failed for ${file.absolutePath}", e)
+                        android.util.Log.w("BingViewModel", "FileProvider mapping failed", e)
                         toast(ctx.getString(R.string.msg_share_failed, e.message.orEmpty()))
                     } catch (e: android.content.ActivityNotFoundException) {
                         android.util.Log.w("BingViewModel", "No app can handle ACTION_SEND", e)
@@ -196,6 +193,28 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 .onFailure {
                     toast(ctx.getString(R.string.msg_share_failed, it.message.orEmpty()))
+                }
+        }
+    }
+
+    fun viewPortrait(entry: WallpaperEntity) {
+        val ctx = getApplication<Application>()
+        viewModelScope.launch {
+            runCatching { repo.ensurePortraitImage(entry) }
+                .onSuccess { image ->
+                    runCatching {
+                        val i = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(image.shareUri(ctx), "image/jpeg")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        ctx.startActivity(i)
+                    }.onFailure {
+                        toast(ctx.getString(R.string.msg_open_image_failed, it.message.orEmpty()))
+                    }
+                }
+                .onFailure {
+                    toast(ctx.getString(R.string.msg_open_image_failed, it.message.orEmpty()))
                 }
         }
     }
@@ -218,5 +237,13 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
 
     private fun toast(msg: String) {
         Toast.makeText(getApplication(), msg, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun WallpaperImage.shareUri(ctx: Application): android.net.Uri {
+        uri?.let { return it }
+        val file = file ?: error("Wallpaper image has no file or uri")
+        return androidx.core.content.FileProvider.getUriForFile(
+            ctx, "${ctx.packageName}.fileprovider", file
+        )
     }
 }
