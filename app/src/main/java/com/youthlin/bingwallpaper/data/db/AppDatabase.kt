@@ -11,6 +11,8 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import android.content.Context
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -21,6 +23,8 @@ import kotlinx.coroutines.flow.Flow
 data class WallpaperEntity(
     /** 日期，格式 yyyyMMdd，作为主键 */
     @PrimaryKey val date: String,
+    /** Bing startdate，构造首页图片来源链接时用于 HpDate */
+    @ColumnInfo(name = "start_date") val startDate: String = date,
     /** 图片 URL 基础部分（不含尺寸后缀） */
     @ColumnInfo(name = "url_base") val urlBase: String,
     /** 标题 */
@@ -62,7 +66,7 @@ interface WallpaperDao {
 /** Room 数据库定义 */
 @Database(
     entities = [WallpaperEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -77,7 +81,18 @@ abstract class AppDatabase : RoomDatabase() {
                 context.applicationContext,
                 AppDatabase::class.java,
                 "bing.db"
-            ).fallbackToDestructiveMigration().build().also { instance = it }
+            )
+                .addMigrations(MIGRATION_1_2)
+                .fallbackToDestructiveMigration()
+                .build()
+                .also { instance = it }
+        }
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE wallpapers ADD COLUMN start_date TEXT NOT NULL DEFAULT ''")
+                db.execSQL("UPDATE wallpapers SET start_date = date WHERE start_date = ''")
+            }
         }
     }
 }

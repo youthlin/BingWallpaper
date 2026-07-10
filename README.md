@@ -43,7 +43,7 @@
   DetailScreen → 左右滑动浏览不同日期
   进入时自动下载 UHD 大图 → 未完成时显示缩略图 + 下载进度，完成后显示本地 UHD
   点击"设为壁纸" → BingViewModel.setAsWallpaper(entry) → WorkManager 后台下载+设置
-  菜单 → 浏览器打开原图链接 / 用其他应用打开竖屏壁纸 / 分享图片 / 复制链接 / 打开必应图片来源
+  菜单 → 查看竖屏壁纸 / 分享高清原图 / 复制原图链接 / 浏览器打开原图 / 浏览器打开搜索
 
 【设置页】
   SettingsScreen → 修改 DataStore 偏好 → 自动同步每日闹钟 / WorkManager 调度

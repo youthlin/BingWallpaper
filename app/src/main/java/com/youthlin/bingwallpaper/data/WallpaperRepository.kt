@@ -529,6 +529,7 @@ class WallpaperRepository(
     /** 把 API 返回的 BingImage 转成数据库实体 */
     private fun BingImage.toEntity() = WallpaperEntity(
         date = endDate,
+        startDate = startDate,
         urlBase = urlBase,
         title = title.ifBlank { copyright.substringBefore('(').trim() },
         copyright = copyright,

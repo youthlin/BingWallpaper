@@ -2,6 +2,7 @@ package com.youthlin.bingwallpaper.ui
 
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -222,6 +223,13 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
     /** 拼接 UHD 原图地址 */
     fun originalUrl(entry: WallpaperEntity): String =
         BingApiFactory.buildImageUrl(entry.urlBase, "_UHD.jpg")
+
+    /** 拼接带 HpDate filter 的 Bing 首页图片来源链接。 */
+    fun sourceUrl(entry: WallpaperEntity): String {
+        val separator = if (entry.copyrightLink.contains('?')) "&" else "?"
+        val filters = "HpDate:\"${entry.startDate}_1600\"+mgzv3configlist:\"BingQA_Encyclopedia_Layout\""
+        return entry.copyrightLink + separator + "filters=" + Uri.encode(filters, "+:")
+    }
 
     /** 复制原图链接到系统剪贴板 */
     fun copyOriginalUrl(entry: WallpaperEntity) {

@@ -68,7 +68,7 @@ import android.widget.Toast
  * 布局：顶部标题栏（返回 + 菜单） + 可缩放大图 + 版权信息 + 日期 + 设为壁纸按钮。
  * 左右滑动可浏览不同日期的壁纸。
  *
- * 菜单项：浏览器打开原图链接 / 用其他应用打开竖屏壁纸 / 分享图片 / 复制链接 / 打开必应图片来源
+ * 菜单项：查看竖屏壁纸 / 分享高清原图 / 复制原图链接 / 浏览器打开原图 / 浏览器打开搜索
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,7 +116,34 @@ fun DetailScreen(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
-                        // 1. 浏览器打开原图链接：当前详情页已显示本地/缓存图，这里只打开原始 URL。
+                        // 1. 查看竖屏壁纸：下载/读取手机壁纸版，再交给系统 ACTION_VIEW。
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_open_portrait)) },
+                            leadingIcon = { Icon(Icons.Outlined.PhoneAndroid, contentDescription = null) },
+                            onClick = {
+                                menuExpanded = false
+                                currentEntry?.let { vm.viewPortrait(it) }
+                            }
+                        )
+                        // 2. 分享高清原图：先下载到本地/图库，再通过系统分享发送。
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_share)) },
+                            leadingIcon = { Icon(Icons.Outlined.Share, contentDescription = null) },
+                            onClick = {
+                                menuExpanded = false
+                                currentEntry?.let { vm.share(it) }
+                            }
+                        )
+                        // 3. 复制原图链接：复制 UHD 原图 URL 到剪贴板。
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_copy_link)) },
+                            leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                            onClick = {
+                                menuExpanded = false
+                                currentEntry?.let { vm.copyOriginalUrl(it) }
+                            }
+                        )
+                        // 4. 浏览器打开原图：当前详情页已显示本地/缓存图，这里只打开原始 URL。
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_open_original)) },
                             leadingIcon = { Icon(Icons.Outlined.OpenInBrowser, contentDescription = null) },
@@ -127,41 +154,14 @@ fun DetailScreen(
                                 }
                             }
                         )
-                        // 2. 用其他应用打开竖屏壁纸：下载/读取手机壁纸版，再交给系统 ACTION_VIEW。
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_open_portrait)) },
-                            leadingIcon = { Icon(Icons.Outlined.PhoneAndroid, contentDescription = null) },
-                            onClick = {
-                                menuExpanded = false
-                                currentEntry?.let { vm.viewPortrait(it) }
-                            }
-                        )
-                        // 3. 分享图片：先下载到本地/图库，再通过系统分享发送
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_share)) },
-                            leadingIcon = { Icon(Icons.Outlined.Share, contentDescription = null) },
-                            onClick = {
-                                menuExpanded = false
-                                currentEntry?.let { vm.share(it) }
-                            }
-                        )
-                        // 4. 复制链接：复制原图 URL 到剪贴板
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_copy_link)) },
-                            leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
-                            onClick = {
-                                menuExpanded = false
-                                currentEntry?.let { vm.copyOriginalUrl(it) }
-                            }
-                        )
-                        // 5. 打开必应图片来源：在浏览器中打开 API 返回的 copyrightLink。
+                        // 5. 浏览器打开搜索：带 HpDate filter 的 Bing 搜索来源页。
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_open_search)) },
                             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                             onClick = {
                                 menuExpanded = false
                                 currentEntry?.let { entry ->
-                                    openExternalLink(context, entry.copyrightLink)
+                                    openExternalLink(context, vm.sourceUrl(entry))
                                 }
                             }
                         )
