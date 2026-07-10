@@ -18,13 +18,17 @@ import com.youthlin.bingwallpaper.data.db.WallpaperEntity
 import com.youthlin.bingwallpaper.work.SetWallpaperWorker
 import com.youthlin.bingwallpaper.work.WorkScheduler
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.launch
 
 /** 首页 UI 状态（loading 和 setting 标志） */
@@ -106,8 +110,9 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
             runCatching { repo.refresh() }
                 .onSuccess {
                     _ui.value = _ui.value.copy(loading = false)
+                    restoreKnownGalleryRefs()
                     // 刷新后触发 Wi-Fi 预取
-                    WorkScheduler.enqueuePrefetch(getApplication())
+                    startWifiPrefetchIfNeeded(wallpapers.value)
                 }
                 .onFailure {
                     _ui.value = _ui.value.copy(loading = false)
@@ -130,6 +135,8 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
 
     /** 正在下载的 Hero 图片任务，按日期去重 */
     private val heroJobs = mutableMapOf<String, Job>()
+    private var prefetchCheckJob: Job? = null
+    private var galleryRestoreJob: Job? = null
 
     /**
      * 为详情页预下载 UHD 大图，并暴露下载进度。
@@ -139,7 +146,12 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
         val key = repo.uhdProgressKey(entry.date)
         if (repo.uhdImageRef(entry) == null && heroJobs[entry.date]?.isActive != true) {
             heroJobs[entry.date] = viewModelScope.launch {
-                runCatching { repo.ensureHeroImage(entry) }
+                runCatching {
+                    val restored = repo.restoreGalleryRefs(listOf(entry)).firstOrNull() ?: entry
+                    if (repo.uhdImageRef(restored) == null) {
+                        repo.ensureHeroImage(restored)
+                    }
+                }
             }
         }
         return repo.progressFlow(key)
@@ -158,8 +170,34 @@ class BingViewModel(app: Application) : AndroidViewModel(app) {
 
     fun startWifiPrefetchIfNeeded(entries: List<WallpaperEntity>) {
         if (!userSettings.value.prefetchOnWifi) return
-        if (entries.none { !hasLocalUhd(it) }) return
-        WorkScheduler.enqueuePrefetch(getApplication())
+        if (entries.isEmpty()) return
+        if (prefetchCheckJob?.isActive == true) return
+        prefetchCheckJob = viewModelScope.launch {
+            val restored = repo.restoreGalleryRefs(entries)
+            if (restored.any { repo.uhdImageRef(it) == null }) {
+                WorkScheduler.enqueuePrefetch(getApplication())
+            }
+        }
+    }
+
+    fun restoreKnownGalleryRefs(delayMillis: Long = 0, restart: Boolean = false) {
+        if (galleryRestoreJob?.isActive == true) {
+            if (!restart) return
+            galleryRestoreJob?.cancel()
+        }
+        galleryRestoreJob = viewModelScope.launch {
+            if (delayMillis > 0) delay(delayMillis)
+            val entries = wallpapers.value.ifEmpty {
+                withTimeoutOrNull(5_000) {
+                    wallpapers.filter { it.isNotEmpty() }.first()
+                }.orEmpty()
+            }
+            if (entries.isEmpty()) return@launch
+            val restored = repo.restoreGalleryRefs(entries)
+            if (userSettings.value.prefetchOnWifi && restored.any { repo.uhdImageRef(it) == null }) {
+                WorkScheduler.enqueuePrefetch(getApplication())
+            }
+        }
     }
 
     /** 分享 UHD 大图。先下载到本地，再通过系统分享菜单发送。 */

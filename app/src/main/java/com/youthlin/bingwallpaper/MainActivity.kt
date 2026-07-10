@@ -2,6 +2,8 @@ package com.youthlin.bingwallpaper
 
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -66,6 +68,21 @@ private fun RootNav() {
     val nav = rememberNavController()
     val vm: BingViewModel = viewModel()
     val context = LocalContext.current
+    val galleryPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        vm.restoreKnownGalleryRefs(delayMillis = 300, restart = true)
+    }
+
+    // 启动后尽早请求图库权限，先恢复旧图片 Uri，再允许详情页/预取触发下载。
+    LaunchedEffect(Unit) {
+        val permissions = galleryReadPermissionsToRequest(context)
+        if (permissions.isNotEmpty()) {
+            galleryPermissionLauncher.launch(permissions)
+        } else {
+            vm.restoreKnownGalleryRefs()
+        }
+    }
 
     // 收集 ViewModel 发出的一次性 Toast 事件
     LaunchedEffect(Unit) {
@@ -91,11 +108,14 @@ private fun RootNav() {
         }
     ) {
         composable("tabs") {
-            TabsScreen(onOpenDetail = { id -> nav.navigate("detail/$id") })
+            TabsScreen(
+                onOpenDetail = { id -> nav.navigate("detail/$id") },
+                vm = vm
+            )
         }
         composable("detail/{id}") { entry ->
             val id = entry.arguments?.getString("id").orEmpty()
-            DetailScreen(id = id, onBack = { nav.popBackStack() })
+            DetailScreen(id = id, onBack = { nav.popBackStack() }, vm = vm)
         }
     }
 }
@@ -105,7 +125,10 @@ private fun RootNav() {
  * 配合 NavigationBar 实现点击切换和滑动切换。
  */
 @Composable
-private fun TabsScreen(onOpenDetail: (String) -> Unit) {
+private fun TabsScreen(
+    onOpenDetail: (String) -> Unit,
+    vm: BingViewModel
+) {
     val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
     val scope = rememberCoroutineScope()
 
@@ -134,7 +157,7 @@ private fun TabsScreen(onOpenDetail: (String) -> Unit) {
         ) { page ->
             Box(Modifier.fillMaxSize()) {
                 when (page) {
-                    0 -> HomeScreen(onOpenDetail = onOpenDetail)
+                    0 -> HomeScreen(onOpenDetail = onOpenDetail, vm = vm)
                     1 -> SettingsScreen()
                 }
             }

@@ -62,8 +62,13 @@ fun HomeScreen(
     val list by vm.wallpapers.collectAsStateWithLifecycle()
     val ui by vm.ui.collectAsStateWithLifecycle()
     val settings by vm.userSettings.collectAsStateWithLifecycle()
+    val dateKeys = remember(list) { list.map { it.date } }
 
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+
+    LaunchedEffect(dateKeys) {
+        if (list.isNotEmpty()) vm.restoreKnownGalleryRefs()
+    }
 
     LaunchedEffect(list, settings.prefetchOnWifi) {
         vm.startWifiPrefetchIfNeeded(list)

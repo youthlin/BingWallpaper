@@ -27,7 +27,8 @@ class BingApp : Application(), Configuration.Provider {
         WorkScheduler.applyFromSettings(this)
         // 如果用户开启了 Wi-Fi 预取，立即排一个后台任务（不阻塞主流程）
         CoroutineScope(Dispatchers.IO).launch {
-            if (SettingsStore(this@BingApp).current().prefetchOnWifi) {
+            val settings = SettingsStore(this@BingApp).current()
+            if (settings.prefetchOnWifi) {
                 WorkScheduler.enqueuePrefetch(this@BingApp)
             }
         }

@@ -85,6 +85,7 @@ class WallpaperRepository(
         val entities = resp.images.map { it.toEntity() }
         if (entities.isEmpty()) error("Bing returned an empty image list")
         db.wallpapers().upsertMetadata(entities)
+        restoreGalleryRefs(entities)
         return db.wallpapers().latest()!!
     }
 
@@ -375,6 +376,32 @@ class WallpaperRepository(
         return savedNew
     }
 
+    /**
+     * 清除应用数据后，Room 里的 file_path 会丢失，但图库中的图片仍然存在。
+     * 这里按日期和固定相册目录重新扫描 MediaStore，找回已保存的 UHD 图片 Uri，
+     * 避免首页误判为未下载并再次下载/保存同一张图。
+     */
+    suspend fun restoreGalleryRefs(entries: List<WallpaperEntity>): List<WallpaperEntity> =
+        withContext(Dispatchers.IO) {
+            entries.map { entry ->
+                if (uhdImageRef(entry) != null) {
+                    entry
+                } else {
+                    val restored = existingGalleryImage(entry, GalleryKind.UHD)
+                    val uri = restored?.uri?.toString()
+                    if (uri.isNullOrBlank()) {
+                        entry
+                    } else {
+                        val updated = entry.copy(filePath = uri)
+                        db.wallpapers().upsert(updated)
+                        progressFlows[uhdProgressKey(entry.date)]?.value =
+                            DownloadProgress(uhdProgressKey(entry.date), 0, 0, done = true)
+                        updated
+                    }
+                }
+            }
+        }
+
     // ==================== 保存到图库 ====================
 
     /** 把下载好的 UHD 图片保存到系统相册（Pictures/BingWallpaper/）。已存在则跳过。 */
@@ -480,13 +507,33 @@ class WallpaperRepository(
         val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val projection = arrayOf(MediaStore.Images.Media._ID)
         val pathWithoutTrailingSlash = relativePath.trimEnd('/')
-        val selection = "${MediaStore.Images.Media.DISPLAY_NAME} LIKE ? AND " +
+        val displaySelection = when (kind) {
+            GalleryKind.UHD -> "${MediaStore.Images.Media.DISPLAY_NAME} LIKE ? AND " +
+                    "${MediaStore.Images.Media.DISPLAY_NAME} NOT LIKE ?"
+            GalleryKind.PORTRAIT -> "${MediaStore.Images.Media.DISPLAY_NAME} LIKE ?"
+        }
+        val selection = "$displaySelection AND " +
                 "(${MediaStore.Images.Media.RELATIVE_PATH} = ? OR ${MediaStore.Images.Media.RELATIVE_PATH} = ?)"
-        val args = arrayOf(galleryDisplayNamePattern(entry, kind), relativePath, pathWithoutTrailingSlash)
-        context.contentResolver.query(collection, projection, selection, args, null)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
-                return ContentUris.withAppendedId(collection, id)
+        val args = when (kind) {
+            GalleryKind.UHD -> arrayOf(
+                galleryDisplayNamePattern(entry, kind),
+                "%_768x1366.jpg",
+                relativePath,
+                pathWithoutTrailingSlash
+            )
+            GalleryKind.PORTRAIT -> arrayOf(
+                galleryDisplayNamePattern(entry, kind),
+                relativePath,
+                pathWithoutTrailingSlash
+            )
+        }
+        val sortOrder = "${MediaStore.Images.Media.DATE_ADDED} DESC"
+        runCatching {
+            context.contentResolver.query(collection, projection, selection, args, sortOrder)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
+                    return ContentUris.withAppendedId(collection, id)
+                }
             }
         }
         return null

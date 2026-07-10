@@ -27,7 +27,8 @@ class PrefetchUhdWorker(
 
         val repo = WallpaperRepository(applicationContext)
         val entries = repo.observeAll().first().sortedByDescending { it.date }
-        for (e in entries) {
+        val restoredEntries = repo.restoreGalleryRefs(entries)
+        for (e in restoredEntries) {
             try {
                 if (settings.saveToGallery && (settings.saveUhdToGallery || settings.savePortraitToGallery)) {
                     repo.ensureSelectedGalleryImages(e)

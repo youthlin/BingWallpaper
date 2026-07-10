@@ -1,11 +1,8 @@
 package com.youthlin.bingwallpaper.ui
 
-import android.Manifest
 import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -51,6 +48,7 @@ import com.youthlin.bingwallpaper.R
 import com.youthlin.bingwallpaper.data.SettingsStore
 import com.youthlin.bingwallpaper.data.UserSettings
 import com.youthlin.bingwallpaper.data.WallpaperTarget
+import com.youthlin.bingwallpaper.galleryWritePermissionToRequest
 import com.youthlin.bingwallpaper.work.WorkScheduler
 import kotlinx.coroutines.launch
 
@@ -72,6 +70,7 @@ fun SettingsScreen() {
     var showFaq by remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
     var pendingGallerySelection by remember { mutableStateOf<Pair<Boolean, Boolean>?>(null) }
+    var pendingRunNow by remember { mutableStateOf(false) }
     val storagePermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -80,10 +79,16 @@ fun SettingsScreen() {
                 scope.launch { store.setGallerySelection(saveUhd, savePortrait) }
                 pendingGallerySelection = null
             }
+            if (pendingRunNow) {
+                pendingRunNow = false
+                runOnceNow(context, settings)
+            }
         } else {
+            pendingGallerySelection = null
+            pendingRunNow = false
             Toast.makeText(
                 context,
-                context.getString(R.string.msg_storage_permission_required),
+                context.getString(R.string.msg_gallery_permission_required),
                 Toast.LENGTH_SHORT
             ).show()
         }
@@ -138,16 +143,12 @@ fun SettingsScreen() {
                 title = stringResource(R.string.setting_run_now),
                 summary = null
             ) {
-                if (settings.saveToGallery && needsLegacyStoragePermission(context)) {
-                    storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                galleryWritePermissionToRequest(context, settings.saveToGallery)?.let { permission ->
+                    pendingRunNow = true
+                    storagePermissionLauncher.launch(permission)
                     return@ClickableRow
                 }
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.msg_applying),
-                    Toast.LENGTH_SHORT
-                ).show()
-                WorkScheduler.runOnce(context, requireUnmetered = settings.onlyWifi)
+                runOnceNow(context, settings)
             }
             HorizontalDivider()
             // 壁纸目标（主屏/锁屏/双屏）
@@ -181,7 +182,7 @@ fun SettingsScreen() {
                 title = stringResource(R.string.setting_prefetch_wifi),
                 summary = stringResource(R.string.setting_prefetch_wifi_summary),
                 checked = settings.prefetchOnWifi,
-                onChange = { scope.launch { store.setPrefetchOnWifi(it) } }
+                onChange = { enabled -> scope.launch { store.setPrefetchOnWifi(enabled) } }
             )
             HorizontalDivider()
             // 常见问题
@@ -260,12 +261,13 @@ fun SettingsScreen() {
             },
             confirmButton = {
                 TextButton(onClick = {
-                    if ((saveUhd || savePortrait) && needsLegacyStoragePermission(context)) {
+                    galleryWritePermissionToRequest(context, saveUhd || savePortrait)?.let { permission ->
                         pendingGallerySelection = saveUhd to savePortrait
-                        storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    } else {
-                        scope.launch { store.setGallerySelection(saveUhd, savePortrait) }
+                        storagePermissionLauncher.launch(permission)
+                        showGalleryDialog = false
+                        return@TextButton
                     }
+                    scope.launch { store.setGallerySelection(saveUhd, savePortrait) }
                     showGalleryDialog = false
                 }) {
                     Text(stringResource(android.R.string.ok))
@@ -377,10 +379,13 @@ private fun openUrl(context: Context, url: String) {
     }
 }
 
-private fun needsLegacyStoragePermission(context: Context): Boolean {
-    return Build.VERSION.SDK_INT <= Build.VERSION_CODES.P &&
-            context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
-            PackageManager.PERMISSION_GRANTED
+private fun runOnceNow(context: Context, settings: UserSettings) {
+    Toast.makeText(
+        context,
+        context.getString(R.string.msg_applying),
+        Toast.LENGTH_SHORT
+    ).show()
+    WorkScheduler.runOnce(context, requireUnmetered = settings.onlyWifi)
 }
 
 private suspend fun SettingsStore.setGallerySelection(saveUhd: Boolean, savePortrait: Boolean) {
