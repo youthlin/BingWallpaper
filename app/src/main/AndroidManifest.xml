@@ -54,9 +54,9 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
-        <!--
-            WorkManager is initialized on-demand from BingApp via WorkManager.getInstance(context)
-            plus a Configuration.Provider. No manifest provider tweaks required for personal use.
-        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="remove" />
     </application>
 </manifest>
