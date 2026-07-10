@@ -68,7 +68,7 @@ import android.widget.Toast
  * 布局：顶部标题栏（返回 + 菜单） + 可缩放大图 + 版权信息 + 日期 + 设为壁纸按钮。
  * 左右滑动可浏览不同日期的壁纸。
  *
- * 菜单项：搜索图片 / 查看原图 / 复制链接 / 分享图片
+ * 菜单项：浏览器打开原图链接 / 用其他应用打开竖屏壁纸 / 分享图片 / 复制链接 / 打开必应图片来源
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,7 +116,7 @@ fun DetailScreen(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
-                        // 1. 查看原图：在浏览器中打开 UHD 大图
+                        // 1. 浏览器打开原图链接：当前详情页已显示本地/缓存图，这里只打开原始 URL。
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_open_original)) },
                             leadingIcon = { Icon(Icons.Outlined.OpenInBrowser, contentDescription = null) },
@@ -127,7 +127,7 @@ fun DetailScreen(
                                 }
                             }
                         )
-                        // 2. 查看竖屏壁纸：下载/打开 Bing 提供的手机壁纸版
+                        // 2. 用其他应用打开竖屏壁纸：下载/读取手机壁纸版，再交给系统 ACTION_VIEW。
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_open_portrait)) },
                             leadingIcon = { Icon(Icons.Outlined.PhoneAndroid, contentDescription = null) },
@@ -154,7 +154,7 @@ fun DetailScreen(
                                 currentEntry?.let { vm.copyOriginalUrl(it) }
                             }
                         )
-                        // 5. 搜索图片：打开 Bing 版权搜索页
+                        // 5. 打开必应图片来源：在浏览器中打开 API 返回的 copyrightLink。
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_open_search)) },
                             leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },

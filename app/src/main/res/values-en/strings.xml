@@ -6,9 +6,9 @@
 
     <string name="action_set_wallpaper">Set as wallpaper</string>
     <string name="action_refresh">Refresh</string>
-    <string name="action_open_search">Search image</string>
-    <string name="action_open_original">View original</string>
-    <string name="action_open_portrait">View portrait wallpaper</string>
+    <string name="action_open_search">Open Bing image source</string>
+    <string name="action_open_original">Open original link in browser</string>
+    <string name="action_open_portrait">Open portrait wallpaper with another app</string>
     <string name="action_copy_link">Copy link</string>
     <string name="action_share">Share image</string>
     <string name="action_more">More</string>

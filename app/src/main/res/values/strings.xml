@@ -6,9 +6,9 @@
 
     <string name="action_set_wallpaper">设为壁纸</string>
     <string name="action_refresh">刷新</string>
-    <string name="action_open_search">搜索图片</string>
-    <string name="action_open_original">查看原图</string>
-    <string name="action_open_portrait">查看竖屏壁纸</string>
+    <string name="action_open_search">打开必应图片来源</string>
+    <string name="action_open_original">浏览器打开原图链接</string>
+    <string name="action_open_portrait">用其他应用打开竖屏壁纸</string>
     <string name="action_copy_link">复制链接</string>
     <string name="action_share">分享图片</string>
     <string name="action_more">更多</string>
