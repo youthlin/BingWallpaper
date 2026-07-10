@@ -33,6 +33,10 @@
     <string name="setting_save_uhd_to_gallery_summary">Save the 4K landscape original; the internal UHD copy is removed after a successful gallery save.</string>
     <string name="setting_save_portrait_to_gallery">768x1366 portrait wallpaper</string>
     <string name="setting_save_portrait_to_gallery_summary">Save Bing\'s phone wallpaper version; the internal portrait copy is removed after a successful gallery save.</string>
+    <string name="setting_save_gallery_off">Off</string>
+    <string name="setting_save_gallery_uhd">Auto-save UHD original to gallery</string>
+    <string name="setting_save_gallery_portrait">Auto-save portrait wallpaper to gallery</string>
+    <string name="setting_save_gallery_both">Auto-save UHD original and portrait wallpaper to gallery</string>
     <string name="setting_prefetch_wifi">Prefetch UHD images on Wi-Fi</string>
     <string name="setting_prefetch_wifi_summary">Cache recent high-res images in the background when the app opens (archives automatically with \"Auto-save to gallery\").</string>
     <string name="setting_run_now">Run once now</string>

@@ -33,6 +33,10 @@
     <string name="setting_save_uhd_to_gallery_summary">保存 4K 横向原图；保存成功后不保留内部 UHD 副本</string>
     <string name="setting_save_portrait_to_gallery">768x1366 竖屏壁纸</string>
     <string name="setting_save_portrait_to_gallery_summary">保存 Bing 手机壁纸版；保存成功后不保留内部竖屏副本</string>
+    <string name="setting_save_gallery_off">未开启</string>
+    <string name="setting_save_gallery_uhd">自动保存 UHD 原图到图库</string>
+    <string name="setting_save_gallery_portrait">自动保存竖屏壁纸到图库</string>
+    <string name="setting_save_gallery_both">自动保存 UHD 原图、竖屏壁纸到图库</string>
     <string name="setting_prefetch_wifi">Wi-Fi 环境自动下载大图</string>
     <string name="setting_prefetch_wifi_summary">打开应用时后台把最近的高清图缓存下来（配合“自动保存到图库”可自动归档）</string>
     <string name="setting_run_now">立即执行一次</string>

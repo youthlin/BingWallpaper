@@ -70,8 +70,8 @@ Bing API (JSON)
 - 每日定时自动更换（AlarmManager 到点触发，WorkManager 执行下载/设置）
 - 开机后如果自动更换开启，会立即补执行一次并恢复下一次每日闹钟
 - 竖屏设备设置壁纸时优先使用 Bing 竖屏构图 `_768x1366.jpg`，失败后退回 UHD 居中裁剪
-- 设置：定时时间、Bing 市场 mkt、目标屏幕、Wi-Fi Only、保存图库、Wi-Fi 预取、立即执行、Material You 动态取色
-- Wi-Fi 下自动预下载图片；图库保存可选 UHD 原图和 768x1366 竖屏图，并做同名去重
+- 设置：定时时间、Bing 市场 mkt、目标屏幕、Wi-Fi Only、保存图库规格、Wi-Fi 预取、立即执行、Material You 动态取色
+- Wi-Fi 下自动预下载图片；图库保存点击后弹出多选框，可选 UHD 原图和 768x1366 竖屏图，并做同名去重
 - 分享图片（通过 FileProvider）
 
 ## 技术栈对比

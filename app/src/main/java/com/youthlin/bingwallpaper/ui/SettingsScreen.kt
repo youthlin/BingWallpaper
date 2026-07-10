@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -67,13 +68,18 @@ fun SettingsScreen() {
     val settings by store.flow.collectAsState(initial = UserSettings())
     var showTargetDialog by remember { mutableStateOf(false) }
     var showMarketDialog by remember { mutableStateOf(false) }
+    var showGalleryDialog by remember { mutableStateOf(false) }
     var showFaq by remember { mutableStateOf(false) }
     var showAbout by remember { mutableStateOf(false) }
+    var pendingGallerySelection by remember { mutableStateOf<Pair<Boolean, Boolean>?>(null) }
     val storagePermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            scope.launch { store.setSaveToGallery(true) }
+            pendingGallerySelection?.let { (saveUhd, savePortrait) ->
+                scope.launch { store.setGallerySelection(saveUhd, savePortrait) }
+                pendingGallerySelection = null
+            }
         } else {
             Toast.makeText(
                 context,
@@ -165,35 +171,11 @@ fun SettingsScreen() {
             )
             HorizontalDivider()
             // 自动保存到系统图库
-            SwitchRow(
+            ClickableRow(
                 title = stringResource(R.string.setting_save_to_gallery),
-                summary = stringResource(R.string.setting_save_to_gallery_summary),
-                checked = settings.saveToGallery,
-                onChange = { enabled ->
-                    if (enabled && needsLegacyStoragePermission(context)) {
-                        storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    } else {
-                        scope.launch { store.setSaveToGallery(enabled) }
-                    }
-                }
-            )
+                summary = gallerySummary(settings)
+            ) { showGalleryDialog = true }
             HorizontalDivider()
-            if (settings.saveToGallery) {
-                SwitchRow(
-                    title = stringResource(R.string.setting_save_uhd_to_gallery),
-                    summary = stringResource(R.string.setting_save_uhd_to_gallery_summary),
-                    checked = settings.saveUhdToGallery,
-                    onChange = { scope.launch { store.setSaveUhdToGallery(it) } }
-                )
-                HorizontalDivider()
-                SwitchRow(
-                    title = stringResource(R.string.setting_save_portrait_to_gallery),
-                    summary = stringResource(R.string.setting_save_portrait_to_gallery_summary),
-                    checked = settings.savePortraitToGallery,
-                    onChange = { scope.launch { store.setSavePortraitToGallery(it) } }
-                )
-                HorizontalDivider()
-            }
             // Wi-Fi 下自动预下载大图
             SwitchRow(
                 title = stringResource(R.string.setting_prefetch_wifi),
@@ -244,6 +226,54 @@ fun SettingsScreen() {
                             Text(stringResource(label))
                         }
                     }
+                }
+            }
+        )
+    }
+
+    // 图库保存设置弹窗
+    if (showGalleryDialog) {
+        var saveUhd by remember(settings.saveToGallery, settings.saveUhdToGallery) {
+            mutableStateOf(settings.saveToGallery && settings.saveUhdToGallery)
+        }
+        var savePortrait by remember(settings.saveToGallery, settings.savePortraitToGallery) {
+            mutableStateOf(settings.saveToGallery && settings.savePortraitToGallery)
+        }
+        AlertDialog(
+            onDismissRequest = { showGalleryDialog = false },
+            title = { Text(stringResource(R.string.setting_save_to_gallery)) },
+            text = {
+                Column {
+                    CheckboxRow(
+                        title = stringResource(R.string.setting_save_uhd_to_gallery),
+                        summary = stringResource(R.string.setting_save_uhd_to_gallery_summary),
+                        checked = saveUhd,
+                        onChange = { saveUhd = it }
+                    )
+                    CheckboxRow(
+                        title = stringResource(R.string.setting_save_portrait_to_gallery),
+                        summary = stringResource(R.string.setting_save_portrait_to_gallery_summary),
+                        checked = savePortrait,
+                        onChange = { savePortrait = it }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if ((saveUhd || savePortrait) && needsLegacyStoragePermission(context)) {
+                        pendingGallerySelection = saveUhd to savePortrait
+                        storagePermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    } else {
+                        scope.launch { store.setGallerySelection(saveUhd, savePortrait) }
+                    }
+                    showGalleryDialog = false
+                }) {
+                    Text(stringResource(android.R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showGalleryDialog = false }) {
+                    Text(stringResource(android.R.string.cancel))
                 }
             }
         )
@@ -351,6 +381,47 @@ private fun needsLegacyStoragePermission(context: Context): Boolean {
     return Build.VERSION.SDK_INT <= Build.VERSION_CODES.P &&
             context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
             PackageManager.PERMISSION_GRANTED
+}
+
+private suspend fun SettingsStore.setGallerySelection(saveUhd: Boolean, savePortrait: Boolean) {
+    setSaveUhdToGallery(saveUhd)
+    setSavePortraitToGallery(savePortrait)
+    setSaveToGallery(saveUhd || savePortrait)
+}
+
+@Composable
+private fun gallerySummary(settings: UserSettings): String {
+    if (!settings.saveToGallery || (!settings.saveUhdToGallery && !settings.savePortraitToGallery)) {
+        return stringResource(R.string.setting_save_gallery_off)
+    }
+    return when {
+        settings.saveUhdToGallery && settings.savePortraitToGallery ->
+            stringResource(R.string.setting_save_gallery_both)
+        settings.saveUhdToGallery -> stringResource(R.string.setting_save_gallery_uhd)
+        else -> stringResource(R.string.setting_save_gallery_portrait)
+    }
+}
+
+@Composable
+private fun CheckboxRow(
+    title: String,
+    summary: String?,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onChange(!checked) }
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(checked = checked, onCheckedChange = onChange)
+        Column(Modifier.weight(1f).padding(start = 8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            if (summary != null) Text(summary, style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }
 
 /** 开关行组件（标题 + 说明 + 开关） */

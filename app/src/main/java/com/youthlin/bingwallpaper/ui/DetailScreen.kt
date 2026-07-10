@@ -116,18 +116,7 @@ fun DetailScreen(
                         expanded = menuExpanded,
                         onDismissRequest = { menuExpanded = false }
                     ) {
-                        // 1. 搜索图片：打开 Bing 版权搜索页
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_open_search)) },
-                            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
-                            onClick = {
-                                menuExpanded = false
-                                currentEntry?.let { entry ->
-                                    openExternalLink(context, entry.copyrightLink)
-                                }
-                            }
-                        )
-                        // 2. 查看原图：在浏览器中打开 UHD 大图
+                        // 1. 查看原图：在浏览器中打开 UHD 大图
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_open_original)) },
                             leadingIcon = { Icon(Icons.Outlined.OpenInBrowser, contentDescription = null) },
@@ -138,13 +127,22 @@ fun DetailScreen(
                                 }
                             }
                         )
-                        // 3. 查看竖屏壁纸：下载/打开 Bing 提供的手机壁纸版
+                        // 2. 查看竖屏壁纸：下载/打开 Bing 提供的手机壁纸版
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.action_open_portrait)) },
                             leadingIcon = { Icon(Icons.Outlined.PhoneAndroid, contentDescription = null) },
                             onClick = {
                                 menuExpanded = false
                                 currentEntry?.let { vm.viewPortrait(it) }
+                            }
+                        )
+                        // 3. 分享图片：先下载到本地/图库，再通过系统分享发送
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.action_share)) },
+                            leadingIcon = { Icon(Icons.Outlined.Share, contentDescription = null) },
+                            onClick = {
+                                menuExpanded = false
+                                currentEntry?.let { vm.share(it) }
                             }
                         )
                         // 4. 复制链接：复制原图 URL 到剪贴板
@@ -156,13 +154,15 @@ fun DetailScreen(
                                 currentEntry?.let { vm.copyOriginalUrl(it) }
                             }
                         )
-                        // 5. 分享图片：先下载到本地/图库，再通过系统分享发送
+                        // 5. 搜索图片：打开 Bing 版权搜索页
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.action_share)) },
-                            leadingIcon = { Icon(Icons.Outlined.Share, contentDescription = null) },
+                            text = { Text(stringResource(R.string.action_open_search)) },
+                            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
                             onClick = {
                                 menuExpanded = false
-                                currentEntry?.let { vm.share(it) }
+                                currentEntry?.let { entry ->
+                                    openExternalLink(context, entry.copyrightLink)
+                                }
                             }
                         )
                     }
