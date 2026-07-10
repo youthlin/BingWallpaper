@@ -456,11 +456,11 @@ class WallpaperRepository(
 
     private fun existingGalleryImage(entry: WallpaperEntity, kind: GalleryKind): WallpaperImage? {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            return findExistingGalleryUri(galleryDisplayName(entry, kind), GALLERY_RELATIVE_PATH)
+            return findExistingGalleryUri(entry, kind, GALLERY_RELATIVE_PATH)
                 ?.let { WallpaperImage(uri = it, savedNew = false) }
         }
         val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-        val dest = File(dir, "BingWallpaper/${galleryDisplayName(entry, kind)}")
+        val dest = existingLegacyGalleryFile(File(dir, "BingWallpaper"), entry, kind)
         return existingFile(dest)?.let { WallpaperImage(file = it, savedNew = false) }
     }
 
@@ -472,13 +472,17 @@ class WallpaperRepository(
         }
     }
 
-    private fun findExistingGalleryUri(displayName: String, relativePath: String): android.net.Uri? {
+    private fun findExistingGalleryUri(
+        entry: WallpaperEntity,
+        kind: GalleryKind,
+        relativePath: String
+    ): android.net.Uri? {
         val collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
         val projection = arrayOf(MediaStore.Images.Media._ID)
         val pathWithoutTrailingSlash = relativePath.trimEnd('/')
-        val selection = "${MediaStore.Images.Media.DISPLAY_NAME} = ? AND " +
+        val selection = "${MediaStore.Images.Media.DISPLAY_NAME} LIKE ? AND " +
                 "(${MediaStore.Images.Media.RELATIVE_PATH} = ? OR ${MediaStore.Images.Media.RELATIVE_PATH} = ?)"
-        val args = arrayOf(displayName, relativePath, pathWithoutTrailingSlash)
+        val args = arrayOf(galleryDisplayNamePattern(entry, kind), relativePath, pathWithoutTrailingSlash)
         context.contentResolver.query(collection, projection, selection, args, null)?.use { cursor ->
             if (cursor.moveToFirst()) {
                 val id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID))
@@ -486,6 +490,24 @@ class WallpaperRepository(
             }
         }
         return null
+    }
+
+    private fun galleryDisplayNamePattern(entry: WallpaperEntity, kind: GalleryKind): String =
+        when (kind) {
+            GalleryKind.UHD -> "${entry.date}_Bing_%.jpg"
+            GalleryKind.PORTRAIT -> "${entry.date}_Bing_%_768x1366.jpg"
+        }
+
+    private fun existingLegacyGalleryFile(dir: File, entry: WallpaperEntity, kind: GalleryKind): File {
+        val exact = File(dir, galleryDisplayName(entry, kind))
+        if (exact.exists()) return exact
+        val suffix = when (kind) {
+            GalleryKind.UHD -> ".jpg"
+            GalleryKind.PORTRAIT -> "_768x1366.jpg"
+        }
+        return dir.listFiles()
+            ?.firstOrNull { it.name.startsWith("${entry.date}_Bing_") && it.name.endsWith(suffix) }
+            ?: exact
     }
 
     private fun wallpapersDir(create: Boolean = false): File {
