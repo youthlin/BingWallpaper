@@ -11,6 +11,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.OpenableColumns
 import android.provider.MediaStore
 import android.util.DisplayMetrics
 import android.view.WindowManager
@@ -339,14 +340,14 @@ class WallpaperRepository(
     }
 
     suspend fun ensureHeroImage(entry: WallpaperEntity): WallpaperImage = withContext(Dispatchers.IO) {
-        uhdImageRef(entry)?.let { cached ->
+        validUhdImageRef(entry)?.let { cached ->
             progressFlows[uhdProgressKey(entry.date)]?.value =
                 DownloadProgress(uhdProgressKey(entry.date), 0, 0, done = true)
             return@withContext cached
         }
 
         val settings = SettingsStore(context).current()
-        if (settings.saveToGallery && settings.saveUhdToGallery) {
+        if (settings.saveToGallery && settings.saveUhdToGallery && canWriteGallery()) {
             ensureGalleryVariant(entry, GalleryKind.UHD)
         } else {
             WallpaperImage(file = ensureHeroFile(entry))
@@ -355,8 +356,9 @@ class WallpaperRepository(
 
     suspend fun ensurePortraitImage(entry: WallpaperEntity): WallpaperImage = withContext(Dispatchers.IO) {
         val settings = SettingsStore(context).current()
-        if (settings.saveToGallery && settings.savePortraitToGallery) {
-            ensureGalleryVariant(entry, GalleryKind.PORTRAIT)
+        if (settings.saveToGallery && settings.savePortraitToGallery && canWriteGallery()) {
+            validGalleryImage(entry, GalleryKind.PORTRAIT)
+                ?: ensureGalleryVariant(entry, GalleryKind.PORTRAIT)
         } else {
             WallpaperImage(file = ensureVariant(entry, "_768x1366.jpg"))
         }
@@ -364,7 +366,7 @@ class WallpaperRepository(
 
     suspend fun ensureSelectedGalleryImages(entry: WallpaperEntity): Boolean {
         val settings = SettingsStore(context).current()
-        if (!settings.saveToGallery) return false
+        if (!settings.saveToGallery || !canWriteGallery()) return false
 
         var savedNew = false
         if (settings.saveUhdToGallery) {
@@ -384,20 +386,32 @@ class WallpaperRepository(
     suspend fun restoreGalleryRefs(entries: List<WallpaperEntity>): List<WallpaperEntity> =
         withContext(Dispatchers.IO) {
             entries.map { entry ->
-                if (uhdImageRef(entry) != null) {
+                storedImageRef(entry.filePath, validateUri = true)?.let { return@map entry }
+
+                val candidate = if (entry.filePath.isNullOrBlank()) {
                     entry
                 } else {
-                    val restored = existingGalleryImage(entry, GalleryKind.UHD)
-                    val uri = restored?.uri?.toString()
-                    if (uri.isNullOrBlank()) {
-                        entry
-                    } else {
-                        val updated = entry.copy(filePath = uri)
-                        db.wallpapers().upsert(updated)
-                        progressFlows[uhdProgressKey(entry.date)]?.value =
-                            DownloadProgress(uhdProgressKey(entry.date), 0, 0, done = true)
-                        updated
-                    }
+                    entry.copy(filePath = null).also { db.wallpapers().upsert(it) }
+                }
+
+                localUhdFile(candidate)?.let { file ->
+                    val updated = candidate.copy(filePath = file.absolutePath)
+                    db.wallpapers().upsert(updated)
+                    progressFlows[uhdProgressKey(entry.date)]?.value =
+                        DownloadProgress(uhdProgressKey(entry.date), 0, 0, done = true)
+                    return@map updated
+                }
+
+                val restored = existingGalleryImage(candidate, GalleryKind.UHD)
+                val uri = restored?.uri?.toString()
+                if (uri.isNullOrBlank()) {
+                    candidate
+                } else {
+                    val updated = candidate.copy(filePath = uri)
+                    db.wallpapers().upsert(updated)
+                    progressFlows[uhdProgressKey(entry.date)]?.value =
+                        DownloadProgress(uhdProgressKey(entry.date), 0, 0, done = true)
+                    updated
                 }
             }
         }
@@ -406,6 +420,7 @@ class WallpaperRepository(
 
     /** 把下载好的 UHD 图片保存到系统相册（Pictures/BingWallpaper/）。已存在则跳过。 */
     suspend fun saveToGallery(entry: WallpaperEntity, file: File): Boolean {
+        if (!canWriteGallery()) return false
         val saved = saveFileToGallery(entry, file, GalleryKind.UHD)
         deleteInternalVariant(entry, GalleryKind.UHD.variant)
         val savedPath = saved.uri?.toString() ?: saved.file?.absolutePath
@@ -417,8 +432,9 @@ class WallpaperRepository(
 
     private suspend fun ensureGalleryVariant(entry: WallpaperEntity, kind: GalleryKind): WallpaperImage {
         existingGalleryImage(entry, kind)?.let { existing ->
-            if (kind == GalleryKind.UHD && entry.filePath != existing.uri?.toString()) {
-                db.wallpapers().upsert(entry.copy(filePath = existing.uri.toString()))
+            val existingPath = existing.storedPath()
+            if (kind == GalleryKind.UHD && existingPath != null && entry.filePath != existingPath) {
+                db.wallpapers().upsert(entry.copy(filePath = existingPath))
             }
             deleteInternalVariant(entry, kind.variant)
             return existing
@@ -427,8 +443,9 @@ class WallpaperRepository(
         val local = ensureVariant(entry, kind.variant)
         val saved = saveFileToGallery(entry, local, kind)
         deleteInternalVariant(entry, kind.variant)
-        if (kind == GalleryKind.UHD && entry.filePath != saved.uri?.toString()) {
-            db.wallpapers().upsert(entry.copy(filePath = saved.uri.toString()))
+        val savedPath = saved.storedPath()
+        if (kind == GalleryKind.UHD && savedPath != null && entry.filePath != savedPath) {
+            db.wallpapers().upsert(entry.copy(filePath = savedPath))
         }
         return saved
     }
@@ -484,6 +501,7 @@ class WallpaperRepository(
     private fun existingGalleryImage(entry: WallpaperEntity, kind: GalleryKind): WallpaperImage? {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             return findExistingGalleryUri(entry, kind, GALLERY_RELATIVE_PATH)
+                ?.takeIf(::isReadableImageUri)
                 ?.let { WallpaperImage(uri = it, savedNew = false) }
         }
         val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
@@ -492,11 +510,11 @@ class WallpaperRepository(
     }
 
     private fun galleryDisplayName(entry: WallpaperEntity, kind: GalleryKind): String {
-        val title = entry.title.take(50)
-        return when (kind) {
-            GalleryKind.UHD -> "${entry.date}_Bing_$title.jpg"
-            GalleryKind.PORTRAIT -> "${entry.date}_Bing_${title}_768x1366.jpg"
-        }
+        return GalleryStorage.displayName(
+            date = entry.date,
+            title = entry.title,
+            isPortrait = kind == GalleryKind.PORTRAIT
+        )
     }
 
     private fun findExistingGalleryUri(
@@ -575,15 +593,72 @@ class WallpaperRepository(
     private fun existingFile(path: String?): File? =
         path?.takeUnless { it.startsWith("content://") }?.let(::File)?.let(::existingFile)
 
-    private fun storedImageRef(path: String?): WallpaperImage? =
+    private fun storedImageRef(path: String?, validateUri: Boolean = false): WallpaperImage? =
         when {
             path.isNullOrBlank() -> null
-            path.startsWith("content://") -> WallpaperImage(uri = Uri.parse(path))
+            path.startsWith("content://") -> {
+                val uri = Uri.parse(path)
+                if (GalleryStorage.usableContentUriPath(path, validateUri) { isReadableImageUri(uri) }) {
+                    WallpaperImage(uri = uri)
+                } else {
+                    null
+                }
+            }
             else -> existingFile(path)?.let { WallpaperImage(file = it) }
         }
 
+    private suspend fun validUhdImageRef(entry: WallpaperEntity): WallpaperImage? {
+        storedImageRef(entry.filePath, validateUri = true)?.let { return it }
+        if (!entry.filePath.isNullOrBlank()) clearStaleStoredImageRef(entry)
+        localUhdFile(entry)?.let { return WallpaperImage(file = it) }
+        return null
+    }
+
+    private suspend fun validGalleryImage(entry: WallpaperEntity, kind: GalleryKind): WallpaperImage? {
+        val image = existingGalleryImage(entry, kind)
+        if (image != null) return image
+        if (kind == GalleryKind.UHD) {
+            clearStaleStoredImageRef(entry)
+        }
+        return null
+    }
+
+    private suspend fun clearStaleStoredImageRef(entry: WallpaperEntity) {
+        val path = entry.filePath
+        if (path != null && storedImageRef(path, validateUri = true) == null) {
+            db.wallpapers().upsert(entry.copy(filePath = null))
+        }
+    }
+
     private fun existingFile(file: File): File? =
         file.takeIf { it.exists() && it.length() > 0 && isDecodableImage(it) }
+
+    private fun canWriteGallery(): Boolean =
+        GalleryStorage.canWriteGalleryOn(
+            sdkInt = Build.VERSION.SDK_INT,
+            hasLegacyWritePermission = context.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) ==
+                    PackageManager.PERMISSION_GRANTED
+        )
+
+    private fun WallpaperImage.storedPath(): String? =
+        uri?.toString() ?: file?.absolutePath
+
+    private fun isReadableImageUri(uri: Uri): Boolean {
+        val resolver = context.contentResolver
+        val openable = runCatching {
+            resolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+                !cursor.moveToFirst() || cursor.getLong(0) != 0L
+            } ?: true
+        }.getOrDefault(true)
+        if (!openable) return false
+        return runCatching {
+            resolver.openInputStream(uri)?.use { input ->
+                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeStream(input, null, options)
+                options.outWidth > 0 && options.outHeight > 0
+            } == true
+        }.getOrDefault(false)
+    }
 
     private fun isDecodableImage(file: File): Boolean {
         val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }

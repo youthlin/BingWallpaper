@@ -55,7 +55,7 @@ Bing API → Retrofit → BingArchiveResponse (DTO)
 ## 构建与运行
 
 ```bash
-# 需要 JDK 17 + Android Studio Ladybug (2024.2) 及以上
+# 需要 JDK 21 + Android Studio Ladybug (2024.2) 及以上
 ./gradlew assembleDebug         # 编译 debug APK
 ./gradlew assembleRelease       # 编译 release（默认 debug 签名；可用 local.properties 配旧 key）
 ./gradlew clean                 # 清理
@@ -78,14 +78,19 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
   - 未保存到图库时，UHD 原图下载到 `context.filesDir/wallpapers/{date}_UHD.jpg`（旧 `{date}.jpg` 兼容读取）
   - 未保存到图库时，竖屏壁纸缓存下载到 `context.filesDir/wallpapers/{date}_768x1366.jpg`
   - 保存到图库时，UHD 原图和 768x1366 竖屏图可分别勾选；成功写入 MediaStore 后删除对应内部缓存，后续使用图库 Uri
+  - 使用图库 Uri 前必须校验其仍可读；若用户删除图库图片或 Uri 失效，进入详情页/设置壁纸时应回退重新下载
+  - 图库文件名必须清洗标题中的 `/`、换行等文件名敏感字符，兼容 Android 9 及以下公共 Pictures 写入
 - **FileProvider**: `file_paths.xml` 映射 `files-path name="wallpapers"`，用于分享功能
 - **Release 签名**: `app/build.gradle.kts` 可从 `local.properties` 读取 `releaseStoreFile` / `releaseStorePassword` / `releaseKeyAlias` / `releaseKeyPassword`；未配置时 fallback 到 debug signing。签名密码不要提交。
 
 ## 权限
 
-当前声明 5 个权限，无运行时权限请求：
+当前权限声明与运行时请求：
 - `INTERNET` — 网络访问
 - `SET_WALLPAPER` — 设置壁纸（无需运行时授权）
+- `WRITE_EXTERNAL_STORAGE` maxSdk 28 — Android 9 及以下保存到公共 Pictures 时运行时请求
+- `READ_EXTERNAL_STORAGE` maxSdk 32 — Android 10-12 识别图库已有图片时可能请求
+- `READ_MEDIA_IMAGES` / `READ_MEDIA_VISUAL_USER_SELECTED` — Android 13+ 识别图库已有图片时请求；Android 14+ 如果用户只授权部分图片，未授权可见的旧图片无法识别，允许重复下载保存
 - `POST_NOTIFICATIONS` — 通知渠道（Android 13+ 需在 Worker 内 `setForeground`，当前未实现）
 - `RECEIVE_BOOT_COMPLETED` — 开机后恢复每日闹钟；自动更换开启时补执行一次
 - `SCHEDULE_EXACT_ALARM` — 尽量按用户设置时间触发每日闹钟；不可用时回退到非精确闹钟

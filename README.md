@@ -8,7 +8,7 @@
 
 1. 用 **Android Studio Ladybug (2024.2)** 及以上版本打开本项目根目录
 2. 等待 Gradle 同步完成（首次需要下载依赖，可能需要几分钟）
-3. 确保 JDK 版本为 **17**（File → Project Structure → SDK Location → Gradle JDK）
+3. 确保 Gradle JDK 使用 **21**；当前构建脚本的 Java/Kotlin 字节码目标仍为 17
 4. 连接模拟器或真机，点击 Run 按钮即可运行
 
 **项目在 IDE 中打开后**，所有源码在 `app/src/main/java/com/youthlin/bingwallpaper/` 下。
@@ -88,7 +88,7 @@ Bing API (JSON)
 | 存储 | 原生 SQLite + external storage | Room 2.6 + 应用私有目录（Scoped Storage 兼容） |
 | 偏好 | SharedPreferences | DataStore-Preferences |
 | 定时 | AlarmManager + IntentService + BootReceiver | AlarmManager + BroadcastReceiver 到点触发，WorkManager 负责网络约束/退避/执行 |
-| 权限 | 多个（存储/开机/网络） | INTERNET / SET_WALLPAPER / POST_NOTIFICATIONS / RECEIVE_BOOT_COMPLETED / SCHEDULE_EXACT_ALARM |
+| 权限 | 多个（存储/开机/网络） | INTERNET / SET_WALLPAPER / POST_NOTIFICATIONS / RECEIVE_BOOT_COMPLETED / SCHEDULE_EXACT_ALARM / 图库读写兼容权限 |
 
 ## 目录结构
 
@@ -173,8 +173,9 @@ wm.setBitmap(bitmap, null, true, flag)
 - 元数据：Room 表 `wallpapers`（date 主键 + urlBase / title / copyright / filePath）
 - UHD 原图：未开启图库保存时使用应用私有目录 `filesDir/wallpapers/{date}_UHD.jpg`，旧路径 `{date}.jpg` 仍兼容读取
 - 竖屏壁纸：未开启竖屏图库保存时使用 `filesDir/wallpapers/{date}_768x1366.jpg`
-- 图库导出：通过 MediaStore API 写入 `Pictures/BingWallpaper/`，可分别保存 UHD 原图和 768x1366 竖屏图，同名已存在则跳过
+- 图库导出：通过 MediaStore API 写入 `Pictures/BingWallpaper/`，可分别保存 UHD 原图和 768x1366 竖屏图，同名已存在则跳过；标题会先清洗成安全文件名
 - 如果某个规格选择保存到图库，图库中的 MediaStore Uri 就作为该规格的长期副本；成功保存后删除对应内部缓存，避免双份占用
+- 如果图库中的长期副本被用户删除或 Uri 失效，进入详情页或设置壁纸时会重新下载；Android 14+ 仅授权部分图片时，未授权可见的已保存图片可能无法识别，重复下载保存属于可接受限制
 
 ### 5. 下载进度系统
 
@@ -183,7 +184,7 @@ wm.setBitmap(bitmap, null, true, flag)
 ## 编译 & 运行
 
 ```bash
-# 需要 JDK 17 + Android Studio Ladybug (2024.2) 及以上
+# 需要 JDK 21 + Android Studio Ladybug (2024.2) 及以上
 ./gradlew assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
