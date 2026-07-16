@@ -54,7 +54,7 @@ import kotlinx.coroutines.launch
 
 /**
  * 设置页面。
- * 包含：每日自动更换开关、时间选择、立即执行、壁纸目标、Wi-Fi Only、保存到图库、Wi-Fi 预取、关于。
+ * 包含：每日自动更换开关、时间选择、立即执行、壁纸目标、保存到图库、Wi-Fi Only、Wi-Fi 预取、关于。
  * 设置变更会通过 DataStore 持久化，并通过 LaunchedEffect 同步更新 WorkManager 调度。
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -132,12 +132,6 @@ fun SettingsScreen() {
                 ).show()
             }
             HorizontalDivider()
-            // 必应市场（影响每日图片和文案区域）
-            ClickableRow(
-                title = stringResource(R.string.setting_market),
-                summary = settings.market
-            ) { showMarketDialog = true }
-            HorizontalDivider()
             // 立即执行一次
             ClickableRow(
                 title = stringResource(R.string.setting_run_now),
@@ -151,6 +145,12 @@ fun SettingsScreen() {
                 runOnceNow(context, settings)
             }
             HorizontalDivider()
+            // 必应市场（影响每日图片和文案区域）
+            ClickableRow(
+                title = stringResource(R.string.setting_market),
+                summary = settings.market
+            ) { showMarketDialog = true }
+            HorizontalDivider()
             // 壁纸目标（主屏/锁屏/双屏）
             ClickableRow(
                 title = stringResource(R.string.setting_target),
@@ -163,6 +163,12 @@ fun SettingsScreen() {
                 )
             ) { showTargetDialog = true }
             HorizontalDivider()
+            // 自动保存到系统图库
+            ClickableRow(
+                title = stringResource(R.string.setting_save_to_gallery),
+                summary = gallerySummary(settings)
+            ) { showGalleryDialog = true }
+            HorizontalDivider()
             // 仅 Wi-Fi 下更新
             SwitchRow(
                 title = stringResource(R.string.setting_only_wifi),
@@ -170,12 +176,6 @@ fun SettingsScreen() {
                 checked = settings.onlyWifi,
                 onChange = { scope.launch { store.setOnlyWifi(it) } }
             )
-            HorizontalDivider()
-            // 自动保存到系统图库
-            ClickableRow(
-                title = stringResource(R.string.setting_save_to_gallery),
-                summary = gallerySummary(settings)
-            ) { showGalleryDialog = true }
             HorizontalDivider()
             // Wi-Fi 下自动预下载大图
             SwitchRow(
