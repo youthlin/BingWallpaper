@@ -1,8 +1,15 @@
 *.iml
 .gradle
+.kotlin
 /local.properties
-/.idea/workspace.xml
-/.idea/libraries
+/.idea
 .DS_Store
 /build
+/app/build
 /captures
+.externalNativeBuild
+.cxx
+local.properties
+*.keystore
+!/debug.keystore
+BingWallpaper-*.apk

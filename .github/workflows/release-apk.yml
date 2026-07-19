@@ -1,0 +1,74 @@
+name: Build release APK
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build signed release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Restore Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare signing config
+        shell: bash
+        env:
+          APK_SIGN_KEY: ${{ secrets.APK_SIGN_KEY }}
+          APK_SIGN_PASSWD: ${{ secrets.APK_SIGN_PASSWD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${APK_SIGN_KEY}" || -z "${APK_SIGN_PASSWD}" ]]; then
+            echo "APK_SIGN_KEY and APK_SIGN_PASSWD secrets are required." >&2
+            exit 1
+          fi
+
+          mkdir -p .gradle
+          printf '%s' "${APK_SIGN_KEY}" | base64 --decode > .gradle/key.jks
+          {
+            echo "releaseStoreFile=.gradle/key.jks"
+            echo "releaseStorePassword=${APK_SIGN_PASSWD}"
+            echo "releaseKeyAlias=lin"
+            echo "releaseKeyPassword=${APK_SIGN_PASSWD}"
+          } > local.properties
+
+      - name: Build release APK
+        run: ./gradlew :app:lintRelease :app:assembleRelease
+
+      - name: Rename APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="${GITHUB_REF_NAME}"
+          mkdir -p release
+          cp app/build/outputs/apk/release/app-release.apk "release/bingwallpaper-${tag}.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bingwallpaper-${{ github.ref_name }}
+          path: release/*.apk
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.apk
